@@ -55,7 +55,7 @@ Open the **DSA panel** mid-game to see every structure updating in real time as 
     <td><img src="Single player.png" alt="Single Player"/><br><sub>Single Player</sub></td>
   </tr>
   <tr>
-    <td><img src="Me vs AI mode.png" alt="Me vs AI"/><br><sub>Me vs AI Mode</sub></td>
+    <td><img src="ME VS AI MODE.png" alt="Me vs AI"/><br><sub>Me vs AI Mode</sub></td>
     <td><img src="2 player.png" alt="Two Player"/><br><sub>Two Player Split Screen</sub></td>
   </tr>
   <tr>
