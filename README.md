@@ -2,7 +2,7 @@
 
 > A fully playable 2048 game where every core feature is powered by a real Data Structure — built as a DSA semester project at CUST.
 
-![Game Preview](MAIN_PAGE.png)
+![Game Preview](MAIN PAGE.png)
 
 ---
 
@@ -51,12 +51,12 @@ Open the **DSA panel** mid-game to see every structure updating in real time as 
 
 <table>
   <tr>
-    <td><img src="game_modes.png" alt="Game Modes"/><br><sub>Game Mode Selection</sub></td>
-    <td><img src="Single_player.png" alt="Single Player"/><br><sub>Single Player</sub></td>
+    <td><img src="game modes.png" alt="Game Modes"/><br><sub>Game Mode Selection</sub></td>
+    <td><img src="Single player.png" alt="Single Player"/><br><sub>Single Player</sub></td>
   </tr>
   <tr>
-    <td><img src="ME_VS_AI.png" alt="Me vs AI"/><br><sub>Me vs AI Mode</sub></td>
-    <td><img src="2_player.png" alt="Two Player"/><br><sub>Two Player Split Screen</sub></td>
+    <td><img src="Me vs AI mode.png" alt="Me vs AI"/><br><sub>Me vs AI Mode</sub></td>
+    <td><img src="2 player.png" alt="Two Player"/><br><sub>Two Player Split Screen</sub></td>
   </tr>
   <tr>
     <td><img src="leaderboards.png" alt="Leaderboard"/><br><sub>BST Leaderboard</sub></td>
