@@ -2,7 +2,7 @@
 
 > A fully playable 2048 game where every core feature is powered by a real Data Structure — built as a DSA semester project at CUST.
 
-![Game Preview](MAIN PAGE.png)
+![Game Preview](MAIN_PAGE.png)
 
 ---
 
