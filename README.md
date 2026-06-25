@@ -116,7 +116,7 @@ Open the **DSA panel** mid-game to see every structure updating in real time as 
 
 **Yamna Kamal**  
 BS Artificial Intelligence — Capital University of Science and Technology (CUST)  
-[LinkedIn](https://www.linkedin.com/in/yamna-kamal) <!-- replace with your actual LinkedIn URL -->
+[LinkedIn]: https://www.linkedin.com/in/yamna-kamal-119b9234b/ <!-- replace with your actual LinkedIn URL -->
 
 ---
 
