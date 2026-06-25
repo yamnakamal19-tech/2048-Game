@@ -1,0 +1,3490 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DSA 2048 Arena</title>
+  <style>
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap');
+/* ─── DSA 2048 ARENA — STYLE ──────────────────────────────────────────────── */
+/* Design tokens */
+:root {
+  --bg-base:       #0a0a14;
+  --bg-card:       rgba(20, 18, 40, 0.7);
+  --bg-glass:      rgba(255,255,255,0.04);
+  --border-glass:  rgba(255,255,255,0.08);
+  --purple-deep:   #7c3aed;
+  --purple-mid:    #9333ea;
+  --purple-light:  #c084fc;
+  --blue-neon:     #38bdf8;
+  --cyan-glow:     #06b6d4;
+  --pink-accent:   #f472b6;
+  --green-neon:    #4ade80;
+  --text-primary:  #f1f0ff;
+  --text-muted:    #8b8aac;
+  --text-dim:      #4a4870;
+  --shadow-glow:   0 0 20px rgba(124, 58, 237, 0.35);
+  --shadow-neon:   0 0 30px rgba(56, 189, 248, 0.2);
+  --radius-lg:     16px;
+  --radius-md:     10px;
+  --radius-sm:     6px;
+  --font-display:  'Space Grotesk', sans-serif;
+  --font-body:     'Inter', sans-serif;
+  --font-mono:     'JetBrains Mono', 'Fira Code', monospace;
+  --transition:    all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ─── RESET & BASE ─────────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: var(--font-body);
+  background: var(--bg-base);
+  color: var(--text-primary);
+  min-height: 100vh;
+  overflow-x: hidden;
+  line-height: 1.6;
+}
+
+/* ─── BACKGROUND CANVAS ────────────────────────────────────────────────────── */
+#particle-canvas {
+  position: fixed; top: 0; left: 0;
+  width: 100%; height: 100%;
+  pointer-events: none; z-index: 0;
+}
+
+#confetti-canvas {
+  position: fixed; top: 0; left: 0;
+  width: 100%; height: 100%;
+  pointer-events: none; z-index: 999;
+  display: none;
+}
+
+/* ─── ANIMATED GRADIENT BACKGROUND ────────────────────────────────────────── */
+body::before {
+  content: '';
+  position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+  background:
+    radial-gradient(ellipse 80% 50% at 20% 10%, rgba(124,58,237,0.12) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 40% at 80% 80%, rgba(56,189,248,0.08) 0%, transparent 60%),
+    radial-gradient(ellipse 40% 60% at 50% 50%, rgba(168,85,247,0.05) 0%, transparent 70%);
+  animation: bgShift 15s ease-in-out infinite alternate;
+  z-index: 0;
+  pointer-events: none;
+}
+
+@keyframes bgShift {
+  0%   { opacity: 1; transform: scale(1); }
+  100% { opacity: 0.7; transform: scale(1.05); }
+}
+
+/* ─── PAGES ────────────────────────────────────────────────────────────────── */
+.page {
+  position: fixed; inset: 0;
+  display: none;
+  overflow-y: auto;
+  z-index: 1;
+  padding: 0;
+}
+.page.active { display: block; }
+
+/* ─── MENU PAGE ────────────────────────────────────────────────────────────── */
+#page-menu {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 2rem 1rem;
+}
+#page-menu.active { display: flex; }
+
+.menu-wrapper {
+  max-width: 520px;
+  width: 100%;
+  text-align: center;
+}
+
+.logo-block {
+  margin-bottom: 2.5rem;
+}
+
+.logo-emblem {
+  width: 80px; height: 80px;
+  background: linear-gradient(135deg, var(--purple-deep), var(--blue-neon));
+  border-radius: 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+  margin-bottom: 1rem;
+  box-shadow: var(--shadow-glow), 0 0 60px rgba(56,189,248,0.15);
+  animation: logoPulse 3s ease-in-out infinite;
+}
+
+@keyframes logoPulse {
+  0%, 100% { box-shadow: var(--shadow-glow); }
+  50%       { box-shadow: 0 0 40px rgba(124,58,237,0.6), 0 0 80px rgba(56,189,248,0.2); }
+}
+
+.logo-title {
+  font-family: var(--font-display);
+  font-size: clamp(1.8rem, 6vw, 2.8rem);
+  font-weight: 800;
+  background: linear-gradient(135deg, var(--purple-light), var(--blue-neon), var(--purple-light));
+  background-size: 200%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: gradShift 4s linear infinite;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+
+.logo-sub {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  letter-spacing: 0.2em;
+  margin-top: 0.4rem;
+  text-transform: uppercase;
+}
+
+@keyframes gradShift {
+  0%   { background-position: 0% 50%; }
+  100% { background-position: 200% 50%; }
+}
+
+.menu-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+}
+
+.menu-btn {
+  width: 100%;
+  padding: 0.85rem 1.5rem;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-glass);
+  background: var(--bg-glass);
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  backdrop-filter: blur(12px);
+  transition: var(--transition);
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  text-align: left;
+  position: relative;
+  overflow: hidden;
+}
+
+.menu-btn::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 3px;
+  background: linear-gradient(to bottom, var(--purple-mid), var(--blue-neon));
+  border-radius: 0 2px 2px 0;
+  transform: scaleY(0);
+  transition: transform 0.25s ease;
+}
+
+.menu-btn:hover {
+  border-color: rgba(124,58,237,0.5);
+  background: rgba(124,58,237,0.1);
+  transform: translateX(4px);
+  box-shadow: var(--shadow-glow);
+}
+
+.menu-btn:hover::before { transform: scaleY(1); }
+
+.menu-btn.primary {
+  background: linear-gradient(135deg, var(--purple-deep), var(--purple-mid));
+  border-color: var(--purple-light);
+  font-size: 1.1rem;
+  padding: 1rem 1.5rem;
+  justify-content: center;
+  box-shadow: var(--shadow-glow);
+}
+
+.menu-btn.primary:hover {
+  background: linear-gradient(135deg, var(--purple-mid), var(--blue-neon));
+  transform: translateY(-2px);
+  box-shadow: 0 0 40px rgba(124,58,237,0.5);
+}
+
+.btn-icon { font-size: 1.2rem; flex-shrink: 0; }
+
+/* ─── GAME MODE PAGE ───────────────────────────────────────────────────────── */
+#page-mode {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  padding: 2rem 1rem;
+  min-height: 100vh;
+}
+#page-mode.active { display: flex; }
+
+.page-header {
+  max-width: 860px;
+  width: 100%;
+  margin-bottom: 2rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.back-btn {
+  background: var(--bg-glass);
+  border: 1px solid var(--border-glass);
+  color: var(--text-muted);
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: var(--transition);
+  flex-shrink: 0;
+}
+.back-btn:hover { color: var(--text-primary); border-color: var(--purple-mid); }
+
+.page-title {
+  font-family: var(--font-display);
+  font-size: 1.6rem;
+  font-weight: 700;
+  background: linear-gradient(135deg, var(--text-primary), var(--purple-light));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.mode-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 1rem;
+  max-width: 860px;
+  width: 100%;
+  margin-bottom: 2rem;
+}
+
+.mode-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-glass);
+  border-radius: var(--radius-lg);
+  padding: 1.5rem;
+  cursor: pointer;
+  transition: var(--transition);
+  backdrop-filter: blur(16px);
+  text-align: center;
+}
+
+.mode-card:hover {
+  border-color: rgba(124,58,237,0.5);
+  box-shadow: var(--shadow-glow);
+  transform: translateY(-3px);
+}
+
+.mode-card.selected {
+  border-color: var(--purple-mid);
+  background: rgba(124,58,237,0.15);
+  box-shadow: var(--shadow-glow);
+}
+
+.mode-icon { font-size: 2.5rem; margin-bottom: 0.75rem; }
+.mode-name { font-family: var(--font-display); font-size: 1.1rem; font-weight: 700; margin-bottom: 0.4rem; }
+.mode-desc { font-size: 0.85rem; color: var(--text-muted); line-height: 1.5; }
+
+#ai-difficulty-section {
+  max-width: 860px; width: 100%;
+  margin-bottom: 1.5rem;
+  display: none;
+}
+
+.ai-diff-label {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  margin-bottom: 0.5rem;
+}
+
+select#ai-difficulty {
+  background: var(--bg-card);
+  border: 1px solid var(--border-glass);
+  color: var(--text-primary);
+  padding: 0.6rem 1rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.95rem;
+  cursor: pointer;
+  backdrop-filter: blur(12px);
+  width: 100%; max-width: 300px;
+}
+
+#start-mode-btn {
+  display: none;
+  padding: 0.9rem 2.5rem;
+  background: linear-gradient(135deg, var(--purple-deep), var(--purple-mid));
+  border: none;
+  border-radius: var(--radius-md);
+  color: white;
+  font-size: 1.05rem;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: var(--shadow-glow);
+  transition: var(--transition);
+}
+#start-mode-btn:hover {
+  background: linear-gradient(135deg, var(--purple-mid), var(--blue-neon));
+  transform: translateY(-2px);
+}
+
+/* ─── GAME PAGE ────────────────────────────────────────────────────────────── */
+#page-game {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  padding: 1rem;
+  min-height: 100vh;
+}
+#page-game.active { display: flex; }
+
+.game-header {
+  max-width: 960px; width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.game-mode-badge {
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  color: var(--purple-light);
+  background: rgba(124,58,237,0.15);
+  padding: 0.3rem 0.8rem;
+  border-radius: 99px;
+  border: 1px solid rgba(124,58,237,0.3);
+}
+
+#game-timer {
+  font-family: var(--font-mono);
+  font-size: 1.1rem;
+  color: var(--blue-neon);
+  min-width: 60px;
+  text-align: center;
+}
+
+.game-controls {
+  display: flex; gap: 0.5rem; flex-wrap: wrap;
+}
+
+.ctrl-btn {
+  background: var(--bg-glass);
+  border: 1px solid var(--border-glass);
+  color: var(--text-muted);
+  padding: 0.4rem 0.9rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.82rem;
+  cursor: pointer;
+  transition: var(--transition);
+  white-space: nowrap;
+}
+.ctrl-btn:hover { color: var(--text-primary); border-color: var(--purple-mid); }
+.ctrl-btn.danger:hover { border-color: var(--pink-accent); color: var(--pink-accent); }
+
+/* boards container */
+.boards-container {
+  max-width: 960px; width: 100%;
+  display: flex;
+  gap: 1.5rem;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+}
+
+.board-panel {
+  flex: 1 1 300px;
+  max-width: 420px;
+  min-width: 280px;
+}
+
+.board-label {
+  text-align: center;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-bottom: 0.5rem;
+}
+
+.score-row {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: center;
+  margin-bottom: 0.75rem;
+  position: relative;
+}
+
+.score-box {
+  flex: 1;
+  background: var(--bg-card);
+  border: 1px solid var(--border-glass);
+  border-radius: var(--radius-sm);
+  padding: 0.4rem 0.8rem;
+  text-align: center;
+  backdrop-filter: blur(12px);
+}
+
+.score-box .score-label {
+  font-size: 0.65rem;
+  color: var(--text-muted);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.score-box .score-val {
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--purple-light);
+}
+
+.score-box .best-val {
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--blue-neon);
+}
+
+.score-flash {
+  position: absolute;
+  top: -20px; left: 50%;
+  transform: translateX(-50%);
+  font-family: var(--font-mono);
+  font-size: 0.9rem;
+  color: var(--green-neon);
+  pointer-events: none;
+  opacity: 0;
+  transition: none;
+}
+.score-flash.flash {
+  animation: flashUp 0.6s ease-out forwards;
+}
+@keyframes flashUp {
+  0%   { opacity: 1; transform: translate(-50%, 0); }
+  100% { opacity: 0; transform: translate(-50%, -30px); }
+}
+
+/* The grid */
+.board-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  grid-template-rows: repeat(4, 1fr);
+  gap: 8px;
+  background: rgba(20,18,40,0.8);
+  border: 1px solid var(--border-glass);
+  border-radius: var(--radius-lg);
+  padding: 8px;
+  aspect-ratio: 1;
+  backdrop-filter: blur(12px);
+  box-shadow: var(--shadow-glow), inset 0 1px 0 rgba(255,255,255,0.05);
+  width: 100%;
+  max-width: 400px;
+  margin: 0 auto;
+}
+
+.tile {
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: clamp(0.9rem, 3vw, 1.4rem);
+  transition: background 0.1s, transform 0.1s;
+  position: relative;
+  aspect-ratio: 1;
+  min-width: 0;
+  user-select: none;
+}
+
+.tile-empty {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid var(--border-glass);
+}
+
+.tile-new  { animation: tileSpawn 0.18s ease-out; }
+.tile-merge { animation: tileMerge 0.2s ease-out; }
+
+@keyframes tileSpawn {
+  from { transform: scale(0); opacity: 0; }
+  to   { transform: scale(1); opacity: 1; }
+}
+@keyframes tileMerge {
+  0%   { transform: scale(1); }
+  40%  { transform: scale(1.12); }
+  100% { transform: scale(1); }
+}
+
+/* Tile colors — each value gets its own identity */
+.tile-2    { background: #1e1b4b; color: #c4b5fd; border: 1px solid #3730a3; }
+.tile-4    { background: #1e1b4b; color: #a5b4fc; border: 1px solid #4338ca; }
+.tile-8    { background: #2e1065; color: #c084fc; border: 1px solid #7c3aed; box-shadow: 0 0 8px rgba(124,58,237,0.3); }
+.tile-16   { background: #3b0764; color: #e879f9; border: 1px solid #a21caf; box-shadow: 0 0 10px rgba(217,70,239,0.3); }
+.tile-32   { background: #500724; color: #fb7185; border: 1px solid #be123c; box-shadow: 0 0 10px rgba(244,63,94,0.3); }
+.tile-64   { background: #7c2d12; color: #fdba74; border: 1px solid #ea580c; box-shadow: 0 0 12px rgba(249,115,22,0.3); }
+.tile-128  { background: #713f12; color: #fde047; border: 1px solid #ca8a04; box-shadow: 0 0 14px rgba(234,179,8,0.4); }
+.tile-256  { background: #14532d; color: #86efac; border: 1px solid #16a34a; box-shadow: 0 0 16px rgba(34,197,94,0.4); }
+.tile-512  { background: #0c4a6e; color: #7dd3fc; border: 1px solid #0284c7; box-shadow: 0 0 18px rgba(14,165,233,0.5); }
+.tile-1024 { background: #0f172a; color: #38bdf8; border: 1px solid #0ea5e9; box-shadow: 0 0 22px rgba(56,189,248,0.6); font-size: clamp(0.7rem,2.5vw,1.05rem); }
+.tile-2048 { background: linear-gradient(135deg, #7c3aed, #38bdf8); color: white; border: 1px solid #c084fc; box-shadow: 0 0 30px rgba(124,58,237,0.8), 0 0 60px rgba(56,189,248,0.4); font-size: clamp(0.6rem,2vw,0.95rem); animation: winPulse 1s ease-in-out infinite; }
+
+@keyframes winPulse {
+  0%, 100% { box-shadow: 0 0 30px rgba(124,58,237,0.8); }
+  50%       { box-shadow: 0 0 60px rgba(56,189,248,0.9), 0 0 100px rgba(124,58,237,0.5); }
+}
+
+/* ─── DSA MINI WIDGETS (in-game sidebar) ──────────────────────────────────── */
+.dsa-widgets-row {
+  max-width: 960px; width: 100%;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 0.6rem;
+  margin-top: 0.5rem;
+}
+
+.dsa-widget {
+  background: var(--bg-card);
+  border: 1px solid var(--border-glass);
+  border-radius: var(--radius-md);
+  padding: 0.75rem;
+  backdrop-filter: blur(12px);
+  min-height: 80px;
+  overflow: hidden;
+}
+
+.dsa-widget-title {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  color: var(--purple-light);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-bottom: 0.4rem;
+  display: flex; align-items: center; gap: 0.4rem;
+}
+
+.dsa-widget-title::before {
+  content: '';
+  display: inline-block;
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--purple-mid);
+  box-shadow: 0 0 6px var(--purple-mid);
+}
+
+.dsa-stat {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  color: var(--text-dim);
+  margin-top: 0.4rem;
+}
+
+/* Stack widget */
+.stack-item {
+  display: flex; align-items: center; gap: 0.5rem;
+  font-family: var(--font-mono); font-size: 0.7rem;
+  padding: 0.2rem 0;
+  border-bottom: 1px solid var(--border-glass);
+  color: var(--text-muted);
+}
+.stack-item.stack-top { color: var(--purple-light); font-weight: 600; }
+.stack-label { font-size: 0.55rem; color: var(--purple-light); min-width: 28px; }
+.stack-value { flex: 1; }
+
+/* Queue widget */
+.queue-label-row {
+  display: flex; justify-content: space-between;
+  font-family: var(--font-mono); font-size: 0.6rem;
+  color: var(--text-dim); margin-bottom: 0.3rem;
+}
+.queue-items {
+  display: flex; align-items: center; gap: 4px;
+  overflow: hidden;
+}
+.queue-item {
+  background: rgba(124,58,237,0.15);
+  border: 1px solid rgba(124,58,237,0.3);
+  border-radius: 4px;
+  padding: 2px 6px;
+  font-family: var(--font-mono); font-size: 0.65rem;
+  text-align: center;
+  min-width: 36px;
+  color: var(--purple-light);
+}
+.q-dir { font-weight: 700; }
+.q-score { font-size: 0.55rem; color: var(--text-muted); }
+.q-arrow { color: var(--text-dim); font-size: 0.7rem; }
+
+/* DLL widget */
+.dll-node {
+  display: inline-flex; flex-direction: column; align-items: center;
+  background: rgba(56,189,248,0.08);
+  border: 1px solid rgba(56,189,248,0.2);
+  border-radius: 4px;
+  padding: 2px 6px;
+  font-family: var(--font-mono); font-size: 0.65rem;
+  color: var(--blue-neon);
+  min-width: 36px;
+}
+.dll-node.dll-current {
+  background: rgba(56,189,248,0.2);
+  border-color: var(--blue-neon);
+  box-shadow: 0 0 8px rgba(56,189,248,0.3);
+}
+.dll-move { font-weight: 700; font-size: 0.6rem; }
+.dll-score { font-size: 0.55rem; color: var(--text-muted); }
+.dll-arrow { color: var(--cyan-glow); font-size: 0.75rem; }
+
+/* Graph widget */
+.graph-chain {
+  display: flex; align-items: center; gap: 3px;
+  overflow: hidden;
+}
+.graph-node {
+  background: rgba(74,222,128,0.08);
+  border: 1px solid rgba(74,222,128,0.2);
+  border-radius: 4px;
+  padding: 2px 5px;
+  font-family: var(--font-mono); font-size: 0.55rem;
+  color: var(--green-neon);
+  min-width: 50px;
+  overflow: hidden;
+}
+.gn-hash { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.5rem; }
+.gn-visits { font-size: 0.5rem; color: var(--text-dim); }
+.g-arrow { color: var(--text-dim); font-size: 0.65rem; }
+
+/* Tree widget */
+.tree-root { text-align: center; margin-bottom: 0.3rem; }
+.tree-node {
+  display: inline-block;
+  background: rgba(248,113,113,0.1);
+  border: 1px solid rgba(248,113,113,0.25);
+  border-radius: 4px;
+  padding: 2px 8px;
+  font-family: var(--font-mono); font-size: 0.65rem;
+  color: var(--pink-accent);
+}
+.tree-node.root-node {
+  background: rgba(124,58,237,0.2);
+  border-color: var(--purple-mid);
+  color: var(--purple-light);
+}
+.tree-node.tree-selected {
+  background: rgba(74,222,128,0.2);
+  border-color: var(--green-neon);
+  color: var(--green-neon);
+  box-shadow: 0 0 8px rgba(74,222,128,0.3);
+}
+.tree-children { display: flex; justify-content: center; gap: 5px; }
+.tn-move { font-weight: 700; font-size: 0.6rem; }
+.tn-score { font-size: 0.55rem; color: var(--text-muted); }
+
+/* ─── DASHBOARD PAGE ──────────────────────────────────────────────────────── */
+#page-dashboard {
+  display: none;
+  padding: 1.5rem 1rem;
+  min-height: 100vh;
+}
+#page-dashboard.active { display: block; }
+
+.dash-layout {
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.dash-header {
+  margin-bottom: 2rem;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 2rem;
+}
+
+.stat-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-glass);
+  border-radius: var(--radius-md);
+  padding: 1rem;
+  backdrop-filter: blur(12px);
+  transition: var(--transition);
+}
+
+.stat-card:hover {
+  border-color: rgba(124,58,237,0.4);
+  box-shadow: var(--shadow-glow);
+}
+
+.stat-card .stat-label {
+  font-size: 0.68rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 0.3rem;
+}
+
+.stat-card .stat-num {
+  font-family: var(--font-display);
+  font-size: 1.6rem;
+  font-weight: 800;
+  background: linear-gradient(135deg, var(--purple-light), var(--blue-neon));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.dash-dsa-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.dash-dsa-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-glass);
+  border-radius: var(--radius-lg);
+  padding: 1.25rem;
+  backdrop-filter: blur(16px);
+  transition: var(--transition);
+}
+
+.dash-dsa-card:hover {
+  border-color: rgba(124,58,237,0.35);
+}
+
+.dash-viz-title {
+  font-family: var(--font-display);
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--purple-light);
+  margin-bottom: 0.75rem;
+  display: flex; align-items: center; gap: 0.5rem;
+}
+
+.dash-stack-item {
+  display: flex; align-items: center; gap: 0.6rem;
+  padding: 0.35rem 0;
+  border-bottom: 1px solid var(--border-glass);
+  font-family: var(--font-mono); font-size: 0.75rem;
+  color: var(--text-muted);
+}
+.dash-stack-item.dash-top { color: var(--purple-light); font-weight: 600; }
+.badge {
+  font-size: 0.6rem;
+  background: rgba(124,58,237,0.2);
+  border: 1px solid rgba(124,58,237,0.3);
+  color: var(--purple-light);
+  padding: 1px 5px;
+  border-radius: 3px;
+  min-width: 28px;
+  text-align: center;
+}
+
+.dash-queue-row {
+  display: flex; align-items: center; gap: 6px;
+  flex-wrap: wrap;
+  margin: 0.4rem 0;
+}
+.dash-queue-item {
+  background: rgba(124,58,237,0.15);
+  border: 1px solid rgba(124,58,237,0.3);
+  border-radius: var(--radius-sm);
+  padding: 4px 8px;
+  font-family: var(--font-mono); font-size: 0.75rem;
+  color: var(--purple-light);
+  text-align: center;
+}
+.dash-queue-item.dash-front { border-color: var(--blue-neon); color: var(--blue-neon); }
+.dash-queue-item.dash-rear  { border-color: var(--pink-accent); color: var(--pink-accent); }
+.q-small { font-size: 0.6rem; color: var(--text-muted); }
+
+.dash-dll-row {
+  display: flex; align-items: center; gap: 5px;
+  flex-wrap: wrap; margin: 0.4rem 0;
+}
+.dash-dll-node {
+  background: rgba(56,189,248,0.08);
+  border: 1px solid rgba(56,189,248,0.2);
+  border-radius: var(--radius-sm);
+  padding: 4px 8px;
+  font-family: var(--font-mono); font-size: 0.75rem;
+  color: var(--blue-neon); text-align: center;
+}
+.dash-dll-node.dll-curr { border-color: var(--blue-neon); box-shadow: 0 0 8px rgba(56,189,248,0.4); }
+.dll-bi { color: var(--cyan-glow); }
+
+.dash-graph-row {
+  display: flex; align-items: center; gap: 5px;
+  flex-wrap: wrap; margin: 0.4rem 0;
+}
+.dash-graph-node {
+  background: rgba(74,222,128,0.06);
+  border: 1px solid rgba(74,222,128,0.2);
+  border-radius: var(--radius-sm);
+  padding: 4px 8px;
+  font-family: var(--font-mono); font-size: 0.7rem;
+  color: var(--green-neon); max-width: 100px; overflow: hidden;
+}
+.gn-mini { font-size: 0.6rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.bst-list { display: flex; flex-direction: column; gap: 0.3rem; margin: 0.4rem 0; }
+.bst-row {
+  display: flex; gap: 0.75rem; align-items: center;
+  font-family: var(--font-mono); font-size: 0.78rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: var(--radius-sm);
+  background: rgba(255,255,255,0.02);
+  transition: var(--transition);
+}
+.bst-row:hover { background: rgba(124,58,237,0.08); }
+.bst-rank { color: var(--purple-light); font-weight: 700; min-width: 22px; }
+.bst-name { color: var(--text-primary); flex: 1; }
+.bst-score { color: var(--blue-neon); font-weight: 700; }
+.bst-mode { color: var(--text-muted); font-size: 0.65rem; }
+
+.viz-info {
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  color: var(--text-dim);
+  margin-top: 0.5rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--border-glass);
+}
+
+.empty-viz {
+  font-size: 0.78rem;
+  color: var(--text-dim);
+  padding: 0.5rem 0;
+  font-style: italic;
+}
+
+/* ─── LEADERBOARD PAGE ────────────────────────────────────────────────────── */
+#page-leaderboard {
+  display: none;
+  padding: 1.5rem 1rem;
+  min-height: 100vh;
+}
+#page-leaderboard.active { display: block; }
+
+.lb-container { max-width: 860px; margin: 0 auto; }
+
+.lb-row {
+  display: flex; align-items: center; gap: 1rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border-glass);
+  border-radius: var(--radius-md);
+  padding: 0.75rem 1rem;
+  margin-bottom: 0.5rem;
+  backdrop-filter: blur(12px);
+  font-size: 0.9rem;
+  transition: var(--transition);
+  flex-wrap: wrap;
+}
+.lb-row:hover { border-color: rgba(124,58,237,0.4); }
+.lb-row.lb-gold   { border-color: #fbbf24; background: rgba(251,191,36,0.07); }
+.lb-row.lb-silver { border-color: #94a3b8; background: rgba(148,163,184,0.05); }
+.lb-row.lb-bronze { border-color: #b45309; background: rgba(180,83,9,0.07); }
+
+.lb-rank  { font-size: 1.2rem; min-width: 36px; }
+.lb-name  { font-weight: 600; flex: 1; }
+.lb-score { font-family: var(--font-mono); font-weight: 700; color: var(--blue-neon); }
+.lb-tile  { font-family: var(--font-mono); font-size: 0.8rem; color: var(--purple-light); }
+.lb-mode  { font-size: 0.75rem; color: var(--text-muted); }
+.lb-date  { font-size: 0.72rem; color: var(--text-dim); margin-left: auto; }
+.empty-lb { text-align: center; color: var(--text-muted); padding: 3rem 0; font-size: 1rem; }
+
+/* ─── ACHIEVEMENTS ────────────────────────────────────────────────────────── */
+#page-achievements {
+  display: none;
+  padding: 1.5rem 1rem;
+  min-height: 100vh;
+}
+#page-achievements.active { display: block; }
+
+.ach-container { max-width: 860px; margin: 0 auto; }
+
+.achievements-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 0.75rem;
+}
+
+.ach-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-glass);
+  border-radius: var(--radius-md);
+  padding: 1.25rem;
+  text-align: center;
+  transition: var(--transition);
+  backdrop-filter: blur(12px);
+}
+
+.ach-card.ach-unlocked {
+  border-color: rgba(74,222,128,0.4);
+  background: rgba(74,222,128,0.06);
+  box-shadow: 0 0 16px rgba(74,222,128,0.15);
+}
+
+.ach-card.ach-locked {
+  opacity: 0.4;
+  filter: grayscale(0.8);
+}
+
+.ach-icon { font-size: 2rem; margin-bottom: 0.5rem; }
+.ach-title { font-weight: 700; font-size: 0.85rem; margin-bottom: 0.3rem; }
+.ach-desc  { font-size: 0.72rem; color: var(--text-muted); line-height: 1.4; }
+
+/* Achievement toast */
+#achievement-toast {
+  position: fixed; bottom: 1.5rem; right: 1.5rem;
+  z-index: 1000;
+  opacity: 0;
+  transform: translateY(20px);
+  transition: all 0.35s ease;
+  pointer-events: none;
+}
+#achievement-toast.active {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.ach-toast {
+  background: rgba(15,10,30,0.95);
+  border: 1px solid rgba(74,222,128,0.5);
+  border-radius: var(--radius-md);
+  padding: 0.75rem 1.1rem;
+  display: flex; align-items: center; gap: 0.75rem;
+  box-shadow: 0 0 20px rgba(74,222,128,0.25);
+  backdrop-filter: blur(20px);
+  max-width: 280px;
+}
+
+.ach-t-icon { font-size: 1.8rem; }
+.ach-t-title { font-size: 0.65rem; color: var(--green-neon); text-transform: uppercase; letter-spacing: 0.1em; }
+.ach-t-name  { font-weight: 700; font-size: 0.95rem; }
+
+/* ─── INSTRUCTIONS PAGE ───────────────────────────────────────────────────── */
+#page-instructions {
+  display: none;
+  padding: 1.5rem 1rem;
+  min-height: 100vh;
+}
+#page-instructions.active { display: block; }
+
+.instructions-body {
+  max-width: 720px; margin: 0 auto;
+}
+
+.inst-section {
+  background: var(--bg-card);
+  border: 1px solid var(--border-glass);
+  border-radius: var(--radius-lg);
+  padding: 1.5rem;
+  margin-bottom: 1rem;
+  backdrop-filter: blur(12px);
+}
+
+.inst-section h3 {
+  font-family: var(--font-display);
+  color: var(--purple-light);
+  margin-bottom: 0.75rem;
+  font-size: 1rem;
+}
+
+.inst-section p, .inst-section li {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  line-height: 1.7;
+}
+
+.inst-section ul { padding-left: 1.2rem; }
+.inst-section li { margin-bottom: 0.3rem; }
+
+kbd {
+  background: rgba(255,255,255,0.08);
+  border: 1px solid var(--border-glass);
+  border-radius: 4px;
+  padding: 1px 6px;
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  color: var(--blue-neon);
+}
+
+/* ─── ABOUT PAGE ──────────────────────────────────────────────────────────── */
+#page-about {
+  display: none;
+  padding: 1.5rem 1rem;
+  min-height: 100vh;
+}
+#page-about.active { display: block; }
+
+.about-body {
+  max-width: 720px; margin: 0 auto;
+}
+
+.about-dsa-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 0.75rem;
+  margin: 1rem 0;
+}
+
+.dsa-entry {
+  background: var(--bg-card);
+  border: 1px solid var(--border-glass);
+  border-radius: var(--radius-md);
+  padding: 1rem;
+  backdrop-filter: blur(12px);
+}
+
+.dsa-entry h4 {
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  color: var(--purple-light);
+  margin-bottom: 0.4rem;
+}
+
+.dsa-entry p {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+.complexity {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  color: var(--blue-neon);
+  margin-top: 0.3rem;
+}
+
+/* ─── MODAL ───────────────────────────────────────────────────────────────── */
+#modal-overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.7);
+  backdrop-filter: blur(8px);
+  z-index: 900;
+  display: none;
+  align-items: center;
+  justify-content: center;
+}
+#modal-overlay.active { display: flex; }
+
+.modal-box {
+  background: rgba(15,12,35,0.97);
+  border: 1px solid rgba(124,58,237,0.4);
+  border-radius: var(--radius-lg);
+  padding: 2rem;
+  max-width: 420px;
+  width: 90%;
+  text-align: center;
+  box-shadow: var(--shadow-glow), 0 0 60px rgba(0,0,0,0.5);
+}
+
+#modal-title {
+  font-family: var(--font-display);
+  font-size: 1.6rem;
+  font-weight: 800;
+  margin-bottom: 0.75rem;
+  background: linear-gradient(135deg, var(--purple-light), var(--blue-neon));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+#modal-message {
+  color: var(--text-muted);
+  font-size: 1rem;
+  margin-bottom: 1.5rem;
+  line-height: 1.6;
+}
+
+#modal-btn {
+  background: linear-gradient(135deg, var(--purple-deep), var(--purple-mid));
+  border: none;
+  color: white;
+  padding: 0.75rem 2rem;
+  border-radius: var(--radius-md);
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition);
+  box-shadow: var(--shadow-glow);
+}
+#modal-btn:hover {
+  background: linear-gradient(135deg, var(--purple-mid), var(--blue-neon));
+  transform: translateY(-2px);
+}
+
+/* ─── SCROLLBAR ───────────────────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(124,58,237,0.3); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(124,58,237,0.5); }
+
+/* ─── RESPONSIVE ──────────────────────────────────────────────────────────── */
+@media (max-width: 600px) {
+  .boards-container { flex-direction: column; align-items: center; }
+  .board-panel { max-width: 100%; }
+  .dsa-widgets-row { grid-template-columns: repeat(2, 1fr); }
+  .game-header { gap: 0.4rem; }
+  .ctrl-btn { padding: 0.35rem 0.6rem; font-size: 0.75rem; }
+  .stats-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 400px) {
+  .dsa-widgets-row { grid-template-columns: 1fr 1fr; }
+  .tile { font-size: 0.8rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}
+
+</style>
+</head>
+<body>
+
+<!-- Background -->
+<canvas id="particle-canvas"></canvas>
+<canvas id="confetti-canvas"></canvas>
+
+<!-- Achievement Toast -->
+<div id="achievement-toast"></div>
+
+<!-- Modal Overlay -->
+<div id="modal-overlay">
+  <div class="modal-box">
+    <div id="modal-title">Title</div>
+    <div id="modal-message">Message</div>
+    <button id="modal-btn">Continue</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ MENU PAGE -->
+<div id="page-menu" class="page active">
+  <div class="menu-wrapper">
+    <div class="logo-block">
+      <div class="logo-emblem">♟</div>
+      <h1 class="logo-title">2048 Arena</h1>
+      <p class="logo-sub">Data Structures &amp; Algorithms · University Project</p>
+    </div>
+
+    <nav class="menu-nav">
+      <button class="menu-btn primary" data-page="mode">
+        <span class="btn-icon">▶</span> Start Game
+      </button>
+      <button class="menu-btn" data-page="mode">
+        <span class="btn-icon">🎮</span> Select Game Mode
+      </button>
+      <button class="menu-btn" data-page="dashboard">
+        <span class="btn-icon">📊</span> Dashboard
+      </button>
+      <button class="menu-btn" data-page="instructions">
+        <span class="btn-icon">📖</span> Instructions
+      </button>
+      <button class="menu-btn" data-page="leaderboard">
+        <span class="btn-icon">🏆</span> Leaderboard
+      </button>
+      <button class="menu-btn" data-page="achievements">
+        <span class="btn-icon">🎖</span> Achievements
+      </button>
+      <button class="menu-btn" data-page="about">
+        <span class="btn-icon">🔬</span> About Project
+      </button>
+    </nav>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ MODE SELECT PAGE -->
+<div id="page-mode" class="page">
+  <div class="page-header">
+    <button class="back-btn" data-page="menu">← Back</button>
+    <h2 class="page-title">Choose Game Mode</h2>
+  </div>
+
+  <div class="mode-grid">
+    <!-- Single Player -->
+    <div class="mode-card" data-mode="single" onclick="app._selectMode('single')">
+      <div class="mode-icon">⚡</div>
+      <div class="mode-name">Single Player</div>
+      <div class="mode-desc">Classic 2048 with undo, save/load, and full DSA visualization. Arrow keys to move.</div>
+    </div>
+
+    <!-- Two Player -->
+    <div class="mode-card" data-mode="two" onclick="app._selectMode('two')">
+      <div class="mode-icon">👥</div>
+      <div class="mode-name">Two Player</div>
+      <div class="mode-desc">Side-by-side boards. Player 1: WASD. Player 2: Arrow Keys. Race to 2048!</div>
+    </div>
+
+    <!-- Me vs AI -->
+    <div class="mode-card" data-mode="ai" onclick="app._selectMode('ai')">
+      <div class="mode-icon">🤖</div>
+      <div class="mode-name">Me vs AI</div>
+      <div class="mode-desc">Challenge the computer. Watch the AI use tree search to pick moves in real time.</div>
+    </div>
+  </div>
+
+  <!-- AI Difficulty -->
+  <div id="ai-difficulty-section">
+    <div class="ai-diff-label">AI Difficulty Level</div>
+    <select id="ai-difficulty">
+      <option value="easy">🎲 Easy — Random valid moves</option>
+      <option value="medium" selected>🧠 Medium — Heuristic (merges + corners)</option>
+      <option value="hard">🔥 Hard — Tree Search (depth 3)</option>
+    </select>
+  </div>
+
+  <button id="start-mode-btn" onclick="app.startGame()">▶ &nbsp;Start</button>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ GAME PAGE -->
+<div id="page-game" class="page">
+
+  <div class="game-header">
+    <button class="back-btn" onclick="app._stopAI(); app._clearTimer(); app.showPage('menu')">← Menu</button>
+    <span class="game-mode-badge" id="game-mode-label">Single Player</span>
+    <span id="game-timer">00:00</span>
+    <div class="game-controls">
+      <button class="ctrl-btn" onclick="app.game1?.undo()">⏮ Undo</button>
+      <button class="ctrl-btn" onclick="app.game1?.saveGame(); alert('Game saved!')">💾 Save</button>
+      <button class="ctrl-btn" onclick="app.game1?.loadGame()">📂 Load</button>
+      <button class="ctrl-btn danger" onclick="app.game1?.reset()">↺ Reset</button>
+      <button class="ctrl-btn" onclick="app.showPage('dashboard')">📊 DSA</button>
+      <button class="ctrl-btn" onclick="if(app.game1){app._promptLeaderboard(app.game1.score)}" title="Save current score to leaderboard">💾 Score</button>
+    </div>
+  </div>
+
+  <!-- Boards -->
+  <div class="boards-container">
+
+    <!-- Board 1 (always shown) -->
+    <div class="board-panel" id="game-board-1-container">
+      <div class="board-label" id="p1-label">Player 1</div>
+      <div class="score-row">
+        <div class="score-box">
+          <div class="score-label">Score</div>
+          <div class="score-val" id="p1-score">0</div>
+        </div>
+        <div class="score-box">
+          <div class="score-label">Best</div>
+          <div class="best-val" id="p1-best">0</div>
+        </div>
+        <span class="score-flash" id="board1-score-flash"></span>
+      </div>
+      <div class="board-grid" id="board1"></div>
+    </div>
+
+    <!-- Board 2 (two-player / AI mode) -->
+    <div class="board-panel" id="game-board-2-container" style="display:none">
+      <div class="board-label" id="p2-label">Player 2 / AI</div>
+      <div class="score-row">
+        <div class="score-box">
+          <div class="score-label">Score</div>
+          <div class="score-val" id="p2-score">0</div>
+        </div>
+        <div class="score-box">
+          <div class="score-label">Best</div>
+          <div class="best-val" id="p2-best">0</div>
+        </div>
+      </div>
+      <div class="board-grid" id="board2"></div>
+    </div>
+
+  </div>
+
+  <!-- DSA Mini Widgets -->
+  <div class="dsa-widgets-row">
+
+    <div class="dsa-widget">
+      <div class="dsa-widget-title">Stack · Undo</div>
+      <div id="stack-viz-mini"><div class="empty-viz">Make moves to see stack</div></div>
+    </div>
+
+    <div class="dsa-widget">
+      <div class="dsa-widget-title">Queue · Move Log</div>
+      <div id="queue-viz-mini"><div class="empty-viz">Move queue is empty</div></div>
+    </div>
+
+    <div class="dsa-widget">
+      <div class="dsa-widget-title">Linked List · History</div>
+      <div id="dll-viz-mini"><div class="empty-viz">History empty</div></div>
+    </div>
+
+    <div class="dsa-widget">
+      <div class="dsa-widget-title">Graph · States</div>
+      <div id="graph-viz-mini"><div class="empty-viz">No states tracked yet</div></div>
+    </div>
+
+    <div class="dsa-widget">
+      <div class="dsa-widget-title">Tree · AI Decisions</div>
+      <div id="tree-viz-mini"><div class="empty-viz">Waiting for AI move...</div></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ DASHBOARD PAGE -->
+<div id="page-dashboard" class="page">
+  <div class="dash-layout">
+
+    <div class="dash-header page-header">
+      <button class="back-btn" data-page="menu">← Back</button>
+      <h2 class="page-title">📊 Data Structures Dashboard</h2>
+      <button class="ctrl-btn" onclick="app._renderDashboard(); app._renderAchievementsSection();" style="background:linear-gradient(135deg,var(--purple-deep),var(--purple-mid));border:none;color:white;padding:0.4rem 1rem;border-radius:6px;font-size:0.85rem;font-weight:600;cursor:pointer;">↺ Refresh</button>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="stats-grid">
+      <div class="stat-card"><div class="stat-label">Score</div><div class="stat-num" id="stat-score">—</div></div>
+      <div class="stat-card"><div class="stat-label">Best Score</div><div class="stat-num" id="stat-best">—</div></div>
+      <div class="stat-card"><div class="stat-label">Max Tile</div><div class="stat-num" id="stat-tile">—</div></div>
+      <div class="stat-card"><div class="stat-label">Total Moves</div><div class="stat-num" id="stat-moves">—</div></div>
+      <div class="stat-card"><div class="stat-label">Merges</div><div class="stat-num" id="stat-merges">—</div></div>
+      <div class="stat-card"><div class="stat-label">Undos Used</div><div class="stat-num" id="stat-undos">—</div></div>
+      <div class="stat-card"><div class="stat-label">Time Played</div><div class="stat-num" id="stat-time">—</div></div>
+      <div class="stat-card"><div class="stat-label">Games Played</div><div class="stat-num" id="stat-games">—</div></div>
+      <div class="stat-card"><div class="stat-label">Games Won</div><div class="stat-num" id="stat-won">—</div></div>
+      <div class="stat-card"><div class="stat-label">Graph Nodes</div><div class="stat-num" id="stat-graph">—</div></div>
+    </div>
+
+    <!-- DSA Visualizations -->
+    <div class="dash-dsa-grid">
+
+      <div class="dash-dsa-card">
+        <div id="dash-stack"><div class="empty-viz">Start a game first</div></div>
+      </div>
+
+      <div class="dash-dsa-card">
+        <div id="dash-queue"><div class="empty-viz">Start a game first</div></div>
+      </div>
+
+      <div class="dash-dsa-card">
+        <div id="dash-dll"><div class="empty-viz">Start a game first</div></div>
+      </div>
+
+      <div class="dash-dsa-card">
+        <div id="dash-graph"><div class="empty-viz">Start a game first</div></div>
+      </div>
+
+      <div class="dash-dsa-card" style="grid-column: 1 / -1;">
+        <div id="dash-bst"><div class="empty-viz">Play games and submit scores to populate the BST</div></div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ LEADERBOARD PAGE -->
+<div id="page-leaderboard" class="page">
+  <div class="lb-container">
+    <div class="page-header">
+      <button class="back-btn" data-page="menu">← Back</button>
+      <h2 class="page-title">🏆 Leaderboard — Top 10</h2>
+      <button class="ctrl-btn danger" onclick="if(confirm('Clear all scores?')) { app.leaderboard.clear(); app._renderLeaderboardPage(); }">Clear</button>
+    </div>
+    <div id="leaderboard-list"></div>
+    <p style="color:var(--text-dim);font-size:0.75rem;margin-top:1rem;font-family:var(--font-mono);">
+      Scores stored in a Binary Search Tree (BST). In-order traversal produces this sorted ranking.
+    </p>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ ACHIEVEMENTS PAGE -->
+<div id="page-achievements" class="page">
+  <div class="ach-container">
+    <div class="page-header">
+      <button class="back-btn" data-page="menu">← Back</button>
+      <h2 class="page-title">🎖 Achievements</h2>
+    </div>
+    <div class="achievements-grid" id="achievements-grid"></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ INSTRUCTIONS PAGE -->
+<div id="page-instructions" class="page">
+  <div class="instructions-body">
+    <div class="page-header">
+      <button class="back-btn" data-page="menu">← Back</button>
+      <h2 class="page-title">📖 How to Play</h2>
+    </div>
+
+    <div class="inst-section">
+      <h3>🎮 Single Player</h3>
+      <p>Use <kbd>↑</kbd> <kbd>↓</kbd> <kbd>←</kbd> <kbd>→</kbd> arrow keys (or swipe on mobile) to slide all tiles. When two tiles with the same number touch, they merge into one. Reach <strong>2048</strong> to win!</p>
+    </div>
+
+    <div class="inst-section">
+      <h3>👥 Two Player</h3>
+      <ul>
+        <li>Player 1 uses <kbd>W</kbd> <kbd>A</kbd> <kbd>S</kbd> <kbd>D</kbd></li>
+        <li>Player 2 uses <kbd>↑</kbd> <kbd>↓</kbd> <kbd>←</kbd> <kbd>→</kbd></li>
+        <li>Both boards run simultaneously. Winner is whoever has the highest score when both get game over, or whoever reaches 2048 first.</li>
+      </ul>
+    </div>
+
+    <div class="inst-section">
+      <h3>🤖 Me vs AI</h3>
+      <ul>
+        <li>You play with arrow keys on the left board. The AI auto-plays the right board.</li>
+        <li><strong>Easy</strong> — AI picks random valid moves</li>
+        <li><strong>Medium</strong> — Heuristic: prefers merges, empty cells, corner placement</li>
+        <li><strong>Hard</strong> — Game tree search (3-ply lookahead)</li>
+      </ul>
+    </div>
+
+    <div class="inst-section">
+      <h3>🔧 Controls</h3>
+      <ul>
+        <li><strong>Undo</strong> — Reverts to previous state (Stack pop)</li>
+        <li><strong>Save</strong> — Saves current state to browser storage</li>
+        <li><strong>Load</strong> — Restores last saved state</li>
+        <li><strong>Reset</strong> — Starts a fresh game</li>
+        <li><strong>DSA</strong> — Opens full data structures dashboard</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ ABOUT PAGE -->
+<div id="page-about" class="page">
+  <div class="about-body">
+    <div class="page-header">
+      <button class="back-btn" data-page="menu">← Back</button>
+      <h2 class="page-title">🔬 About the Project</h2>
+    </div>
+
+    <div class="inst-section">
+      <h3>Data Structures Used</h3>
+      <div class="about-dsa-list">
+
+        <div class="dsa-entry">
+          <h4>Stack</h4>
+          <p>Powers the Undo system. Each move pushes the board state; undo pops it back. LIFO ensures the most recent move is undone first.</p>
+          <div class="complexity">Push/Pop: O(1) | Space: O(n)</div>
+        </div>
+
+        <div class="dsa-entry">
+          <h4>Queue</h4>
+          <p>Logs all moves in FIFO order. Used for action history replay and turn management in two-player mode.</p>
+          <div class="complexity">Enqueue/Dequeue: O(1) | Space: O(n)</div>
+        </div>
+
+        <div class="dsa-entry">
+          <h4>Doubly Linked List</h4>
+          <p>Stores move history allowing bidirectional traversal — navigate forward and backward through game history.</p>
+          <div class="complexity">Insert: O(1) | Navigate: O(1) | Space: O(n)</div>
+        </div>
+
+        <div class="dsa-entry">
+          <h4>Game Tree</h4>
+          <p>Used by the Hard AI. Builds an N-ary tree of future board states up to depth 3 and picks the highest-scoring path.</p>
+          <div class="complexity">Build: O(b^d) | Space: O(b^d)</div>
+        </div>
+
+        <div class="dsa-entry">
+          <h4>Graph (Adjacency List)</h4>
+          <p>Tracks every visited board state as a node, with moves as directed edges. Detects revisited states and shows game exploration.</p>
+          <div class="complexity">Add: O(1) | Space: O(V+E)</div>
+        </div>
+
+        <div class="dsa-entry">
+          <h4>BST (Binary Search Tree)</h4>
+          <p>Maintains the sorted leaderboard. In-order traversal produces ranked scores automatically. No manual sorting needed.</p>
+          <div class="complexity">Insert/Search: O(log n) avg | Traverse: O(n)</div>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="inst-section">
+      <h3>Technical Stack</h3>
+      <p>Built with pure <strong>HTML5</strong>, <strong>CSS3</strong>, and <strong>Vanilla JavaScript</strong> — no frameworks. Architecture uses OOP classes with separation of concerns across 9 JavaScript modules. Persistent storage via <code>localStorage</code>.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ SCRIPTS -->
+<script>
+/**
+ * STACK - Undo Functionality
+ * 
+ * Why: A stack (LIFO) is perfect for undo because the most recent
+ *      action should be undone first — exactly what last-in-first-out gives us.
+ * 
+ * Time Complexity:
+ *   Push:  O(1)
+ *   Pop:   O(1)
+ *   Peek:  O(1)
+ * 
+ * Space Complexity: O(n) where n = number of saved states
+ */
+class Stack {
+  constructor(maxSize = 50) {
+    this.items = [];
+    this.maxSize = maxSize;
+  }
+
+  push(item) {
+    if (this.items.length >= this.maxSize) {
+      this.items.shift(); // remove oldest if full
+    }
+    this.items.push(item);
+    return this;
+  }
+
+  pop() {
+    if (this.isEmpty()) return null;
+    return this.items.pop();
+  }
+
+  peek() {
+    if (this.isEmpty()) return null;
+    return this.items[this.items.length - 1];
+  }
+
+  isEmpty() {
+    return this.items.length === 0;
+  }
+
+  size() {
+    return this.items.length;
+  }
+
+  clear() {
+    this.items = [];
+  }
+
+  toArray() {
+    return [...this.items];
+  }
+}
+
+window.Stack = Stack;
+
+
+/**
+ * QUEUE - Move Processing & Action History
+ * 
+ * Why: A queue (FIFO) ensures moves are processed in the exact order
+ *      they were made. This is critical in two-player mode for fair
+ *      turn management and in replaying action history.
+ * 
+ * Time Complexity:
+ *   Enqueue: O(1)
+ *   Dequeue: O(1) amortized (with index optimization)
+ *   Peek:    O(1)
+ * 
+ * Space Complexity: O(n)
+ */
+class Queue {
+  constructor(maxSize = 100) {
+    this.items = [];
+    this.head = 0;
+    this.maxSize = maxSize;
+  }
+
+  enqueue(item) {
+    if (this.size() >= this.maxSize) {
+      this.dequeue(); // drop oldest
+    }
+    this.items.push(item);
+    return this;
+  }
+
+  dequeue() {
+    if (this.isEmpty()) return null;
+    const item = this.items[this.head];
+    this.head++;
+    // Compact array periodically to avoid memory leak
+    if (this.head > 20) {
+      this.items = this.items.slice(this.head);
+      this.head = 0;
+    }
+    return item;
+  }
+
+  peek() {
+    if (this.isEmpty()) return null;
+    return this.items[this.head];
+  }
+
+  isEmpty() {
+    return this.head >= this.items.length;
+  }
+
+  size() {
+    return this.items.length - this.head;
+  }
+
+  clear() {
+    this.items = [];
+    this.head = 0;
+  }
+
+  toArray() {
+    return this.items.slice(this.head);
+  }
+}
+
+window.Queue = Queue;
+
+
+/**
+ * DOUBLY LINKED LIST - Move History Navigation
+ * 
+ * Why: A doubly linked list allows traversal in both directions —
+ *      perfect for navigating forward/backward through move history
+ *      without the overhead of an array shift.
+ * 
+ * Time Complexity:
+ *   Insert (front/back): O(1)
+ *   Delete:              O(1) given node reference
+ *   Traversal:           O(n)
+ * 
+ * Space Complexity: O(n)
+ */
+class DLLNode {
+  constructor(data) {
+    this.data = data;
+    this.prev = null;
+    this.next = null;
+    this.id = Date.now() + Math.random();
+  }
+}
+
+class DoublyLinkedList {
+  constructor(maxSize = 30) {
+    this.head = null;
+    this.tail = null;
+    this.current = null;
+    this._size = 0;
+    this.maxSize = maxSize;
+  }
+
+  append(data) {
+    const node = new DLLNode(data);
+
+    // If we're not at tail, truncate future history
+    if (this.current && this.current !== this.tail) {
+      let toRemove = this.current.next;
+      this.current.next = null;
+      this.tail = this.current;
+      // update size
+      while (toRemove) {
+        this._size--;
+        toRemove = toRemove.next;
+      }
+    }
+
+    if (!this.head) {
+      this.head = node;
+      this.tail = node;
+    } else {
+      node.prev = this.tail;
+      this.tail.next = node;
+      this.tail = node;
+    }
+    this.current = node;
+    this._size++;
+
+    // Trim if over max
+    if (this._size > this.maxSize) {
+      this.head = this.head.next;
+      if (this.head) this.head.prev = null;
+      this._size--;
+    }
+
+    return node;
+  }
+
+  goBack() {
+    if (this.current && this.current.prev) {
+      this.current = this.current.prev;
+      return this.current.data;
+    }
+    return null;
+  }
+
+  goForward() {
+    if (this.current && this.current.next) {
+      this.current = this.current.next;
+      return this.current.data;
+    }
+    return null;
+  }
+
+  canGoBack() {
+    return !!(this.current && this.current.prev);
+  }
+
+  canGoForward() {
+    return !!(this.current && this.current.next);
+  }
+
+  getCurrentData() {
+    return this.current ? this.current.data : null;
+  }
+
+  size() {
+    return this._size;
+  }
+
+  clear() {
+    this.head = null;
+    this.tail = null;
+    this.current = null;
+    this._size = 0;
+  }
+
+  toArray() {
+    const arr = [];
+    let node = this.head;
+    while (node) {
+      arr.push({ data: node.data, isCurrent: node === this.current, id: node.id });
+      node = node.next;
+    }
+    return arr;
+  }
+}
+
+window.DoublyLinkedList = DoublyLinkedList;
+
+
+/**
+ * BINARY SEARCH TREE - Leaderboard Score Management
+ * 
+ * Why: A BST automatically maintains sorted order during insertion.
+ *      In-order traversal gives us scores ranked from lowest to highest
+ *      in O(n), and insertion/search are O(log n) on average.
+ * 
+ * Time Complexity:
+ *   Insert:   O(log n) avg, O(n) worst
+ *   Search:   O(log n) avg, O(n) worst
+ *   Traversal: O(n)
+ * 
+ * Space Complexity: O(n)
+ */
+class BSTNode {
+  constructor(score, playerData) {
+    this.score = score;
+    this.playerData = playerData; // { name, mode, tile, date }
+    this.left = null;
+    this.right = null;
+    this.id = Date.now() + Math.random();
+  }
+}
+
+class BST {
+  constructor() {
+    this.root = null;
+    this._size = 0;
+  }
+
+  insert(score, playerData) {
+    const node = new BSTNode(score, playerData);
+    if (!this.root) {
+      this.root = node;
+    } else {
+      this._insertNode(this.root, node);
+    }
+    this._size++;
+    return node;
+  }
+
+  _insertNode(node, newNode) {
+    if (newNode.score <= node.score) {
+      if (!node.left) node.left = newNode;
+      else this._insertNode(node.left, newNode);
+    } else {
+      if (!node.right) node.right = newNode;
+      else this._insertNode(node.right, newNode);
+    }
+  }
+
+  // Returns sorted array (ascending)
+  inOrder() {
+    const result = [];
+    this._inOrder(this.root, result);
+    return result;
+  }
+
+  _inOrder(node, result) {
+    if (!node) return;
+    this._inOrder(node.left, result);
+    result.push({ score: node.score, ...node.playerData, id: node.id });
+    this._inOrder(node.right, result);
+  }
+
+  // Returns top N scores (descending)
+  getTopN(n = 10) {
+    return this.inOrder().reverse().slice(0, n);
+  }
+
+  search(score) {
+    return this._search(this.root, score);
+  }
+
+  _search(node, score) {
+    if (!node) return null;
+    if (score === node.score) return node;
+    if (score < node.score) return this._search(node.left, score);
+    return this._search(node.right, score);
+  }
+
+  size() {
+    return this._size;
+  }
+
+  clear() {
+    this.root = null;
+    this._size = 0;
+  }
+
+  // For visualization: get tree as nested structure
+  getTreeStructure() {
+    return this._getStructure(this.root, 0);
+  }
+
+  _getStructure(node, depth) {
+    if (!node) return null;
+    return {
+      score: node.score,
+      name: node.playerData.name,
+      depth,
+      id: node.id,
+      left: this._getStructure(node.left, depth + 1),
+      right: this._getStructure(node.right, depth + 1)
+    };
+  }
+}
+
+window.BST = BST;
+
+
+/**
+ * GRAPH - Game State Tracking (Adjacency List)
+ * 
+ * Why: A graph models the relationship between board states.
+ *      Each unique board = a node. Each move connecting two boards = an edge.
+ *      This lets us detect cycles (repeated states) and visualize exploration.
+ * 
+ * Time Complexity:
+ *   Add Node:  O(1)
+ *   Add Edge:  O(1)
+ *   Has Node:  O(1) with hash map
+ * 
+ * Space Complexity: O(V + E) where V = states, E = moves between them
+ */
+class Graph {
+  constructor(maxNodes = 200) {
+    // adjacencyList: stateHash -> { edges: [{ to, move }], label, visitCount }
+    this.adjacencyList = new Map();
+    this.maxNodes = maxNodes;
+    this._edgeCount = 0;
+    this.recentNodes = []; // for visualization (last N nodes)
+    this.maxRecentViz = 8;
+  }
+
+  // Hash a board state into a compact string key
+  hashState(board) {
+    return board.flat().join(',');
+  }
+
+  addState(board, label = '') {
+    const hash = this.hashState(board);
+    if (!this.adjacencyList.has(hash)) {
+      if (this.adjacencyList.size >= this.maxNodes) {
+        // Remove oldest entry
+        const oldest = this.adjacencyList.keys().next().value;
+        this.adjacencyList.delete(oldest);
+      }
+      this.adjacencyList.set(hash, { edges: [], label, visitCount: 1, hash });
+    } else {
+      this.adjacencyList.get(hash).visitCount++;
+    }
+    return hash;
+  }
+
+  addEdge(fromBoard, toBoard, move) {
+    const fromHash = this.addState(fromBoard);
+    const toHash = this.addState(toBoard);
+
+    const fromNode = this.adjacencyList.get(fromHash);
+    // Avoid duplicate edges
+    const exists = fromNode.edges.some(e => e.to === toHash && e.move === move);
+    if (!exists) {
+      fromNode.edges.push({ to: toHash, move });
+      this._edgeCount++;
+    }
+
+    // Track for visualization
+    if (!this.recentNodes.includes(fromHash)) {
+      this.recentNodes.push(fromHash);
+      if (this.recentNodes.length > this.maxRecentViz) {
+        this.recentNodes.shift();
+      }
+    }
+
+    return { fromHash, toHash };
+  }
+
+  hasState(board) {
+    return this.adjacencyList.has(this.hashState(board));
+  }
+
+  getNode(hash) {
+    return this.adjacencyList.get(hash) || null;
+  }
+
+  nodeCount() {
+    return this.adjacencyList.size;
+  }
+
+  edgeCount() {
+    return this._edgeCount;
+  }
+
+  clear() {
+    this.adjacencyList.clear();
+    this._edgeCount = 0;
+    this.recentNodes = [];
+  }
+
+  // Get recent state chain for visualization
+  getRecentChain() {
+    return this.recentNodes.map((hash, i) => {
+      const node = this.adjacencyList.get(hash);
+      return {
+        hash: hash.substring(0, 8) + '...',
+        fullHash: hash,
+        visits: node ? node.visitCount : 0,
+        edges: node ? node.edges.length : 0,
+        index: i
+      };
+    });
+  }
+}
+
+window.Graph = Graph;
+
+
+/**
+ * TREE - AI Move Evaluation (N-ary Game Tree)
+ * 
+ * Why: A game tree models future board states from each possible move.
+ *      The root is the current state, children are states after each move.
+ *      The AI evaluates leaf nodes and picks the best path (minimax-style).
+ * 
+ * Time Complexity:
+ *   Build tree (depth d, branching b): O(b^d)
+ *   Evaluation: O(b^d)
+ * 
+ * Space Complexity: O(b^d)
+ */
+class TreeNode {
+  constructor(board, move = null, score = 0, depth = 0) {
+    this.board = board;
+    this.move = move;         // which move led here
+    this.score = score;       // board evaluation score
+    this.depth = depth;
+    this.children = [];
+    this.id = `node_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+    this.isSelected = false;
+  }
+
+  addChild(childNode) {
+    this.children.push(childNode);
+    return childNode;
+  }
+}
+
+class GameTree {
+  constructor() {
+    this.root = null;
+    this.bestPath = [];
+    this.totalNodes = 0;
+  }
+
+  build(board, depth = 2) {
+    this.totalNodes = 0;
+    this.root = new TreeNode(board, null, 0, 0);
+    this._buildRecursive(this.root, depth);
+    return this.root;
+  }
+
+  _buildRecursive(node, remainingDepth) {
+    if (remainingDepth === 0) return;
+
+    const moves = ['up', 'down', 'left', 'right'];
+    for (const move of moves) {
+      const result = this._simulateMove(node.board, move);
+      if (result.changed) {
+        const childScore = this._evaluateBoard(result.board);
+        const child = new TreeNode(result.board, move, childScore, node.depth + 1);
+        node.addChild(child);
+        this.totalNodes++;
+        this._buildRecursive(child, remainingDepth - 1);
+      }
+    }
+  }
+
+  // Evaluate board quality for AI
+  _evaluateBoard(board) {
+    let score = 0;
+    const size = board.length;
+
+    // 1. Empty cells (more = better)
+    let empty = 0;
+    for (let r = 0; r < size; r++)
+      for (let c = 0; c < size; c++)
+        if (board[r][c] === 0) empty++;
+    score += empty * 10;
+
+    // 2. Max tile in corner bonus
+    const maxTile = Math.max(...board.flat());
+    if (board[0][0] === maxTile || board[0][3] === maxTile ||
+        board[3][0] === maxTile || board[3][3] === maxTile) {
+      score += maxTile * 2;
+    }
+
+    // 3. Monotonicity (tiles decrease in one direction)
+    score += this._monotonicity(board) * 5;
+
+    // 4. Smoothness (adjacent tiles similar value)
+    score -= this._roughness(board) * 2;
+
+    // 5. Merge potential
+    score += this._mergeCount(board) * 15;
+
+    return score;
+  }
+
+  _monotonicity(board) {
+    let score = 0;
+    for (let r = 0; r < 4; r++) {
+      let inc = 0, dec = 0;
+      for (let c = 0; c < 3; c++) {
+        if (board[r][c] >= board[r][c + 1]) dec++;
+        if (board[r][c] <= board[r][c + 1]) inc++;
+      }
+      score += Math.max(inc, dec);
+    }
+    return score;
+  }
+
+  _roughness(board) {
+    let rough = 0;
+    for (let r = 0; r < 4; r++) {
+      for (let c = 0; c < 4; c++) {
+        if (board[r][c] && c < 3 && board[r][c + 1])
+          rough += Math.abs(Math.log2(board[r][c]) - Math.log2(board[r][c + 1]));
+        if (board[r][c] && r < 3 && board[r + 1][c])
+          rough += Math.abs(Math.log2(board[r][c]) - Math.log2(board[r + 1][c]));
+      }
+    }
+    return rough;
+  }
+
+  _mergeCount(board) {
+    let count = 0;
+    for (let r = 0; r < 4; r++) {
+      for (let c = 0; c < 3; c++) {
+        if (board[r][c] && board[r][c] === board[r][c + 1]) count++;
+        if (board[c][r] && board[c][r] === board[c + 1] && board[c + 1]) count++;
+      }
+    }
+    return count;
+  }
+
+  // Returns the best move from root based on child scores
+  getBestMove() {
+    if (!this.root || this.root.children.length === 0) return null;
+
+    let best = null;
+    let bestScore = -Infinity;
+
+    for (const child of this.root.children) {
+      const subtreeScore = this._maxScore(child);
+      if (subtreeScore > bestScore) {
+        bestScore = subtreeScore;
+        best = child.move;
+        this.bestPath = [child];
+      }
+    }
+
+    // Mark selected path
+    this.root.children.forEach(c => c.isSelected = c.move === best);
+    return best;
+  }
+
+  _maxScore(node) {
+    if (node.children.length === 0) return node.score;
+    return Math.max(node.score, ...node.children.map(c => this._maxScore(c)));
+  }
+
+  // For visualization: flattened tree nodes by depth
+  getVisualizationData() {
+    const levels = [];
+    this._collectLevels(this.root, 0, levels);
+    return {
+      levels,
+      totalNodes: this.totalNodes,
+      bestPath: this.bestPath.map(n => n.id)
+    };
+  }
+
+  _collectLevels(node, depth, levels) {
+    if (!node) return;
+    if (!levels[depth]) levels[depth] = [];
+    levels[depth].push({
+      id: node.id,
+      move: node.move,
+      score: node.score,
+      isSelected: node.isSelected,
+      childCount: node.children.length
+    });
+    for (const child of node.children) {
+      this._collectLevels(child, depth + 1, levels);
+    }
+  }
+
+  // Simulate a move on a board copy (returns {board, changed, score})
+  _simulateMove(board, direction) {
+    let gained = 0;
+
+    // Use the same rotation logic as the real game's _applyMove
+    const rotate90cw = (b) => b[0].map((_, i) => b.map(row => row[i]).reverse());
+    const rotateBoard = (b, times) => {
+      let res = b.map(r => [...r]);
+      for (let t = 0; t < ((times % 4) + 4) % 4; t++) res = rotate90cw(res);
+      return res;
+    };
+    const slideLeft = (b) => {
+      let ch = false;
+      for (let r = 0; r < 4; r++) {
+        let arr = b[r].filter(v => v !== 0);
+        for (let i = 0; i < arr.length - 1; i++) {
+          if (arr[i] === arr[i + 1]) {
+            arr[i] *= 2; gained += arr[i]; arr.splice(i + 1, 1); ch = true;
+          }
+        }
+        const newRow = [...arr, ...Array(4 - arr.length).fill(0)];
+        if (newRow.join() !== b[r].join()) ch = true;
+        b[r] = newRow;
+      }
+      return { board: b, changed: ch };
+    };
+
+    const rotations = { left: 0, up: 1, right: 2, down: 3 };
+    const rot = rotations[direction];
+    let b = rotateBoard(board, rot);
+    const res = slideLeft(b);
+    const result = rotateBoard(res.board, (4 - rot) % 4);
+
+    return { board: result, changed: res.changed, score: gained };
+  }
+}
+
+window.TreeNode = TreeNode;
+window.GameTree = GameTree;
+
+
+/**
+ * AI PLAYER - Three difficulty levels using different DSA strategies
+ */
+class AIPlayer {
+  constructor(difficulty = 'medium') {
+    this.difficulty = difficulty;
+    this.gameTree = new GameTree();
+    this.moveDelay = difficulty === 'easy' ? 600 : difficulty === 'medium' ? 400 : 250;
+    this.thinkingDepth = difficulty === 'hard' ? 3 : 2;
+  }
+
+  setDifficulty(diff) {
+    this.difficulty = diff;
+    this.moveDelay = diff === 'easy' ? 600 : diff === 'medium' ? 400 : 250;
+    this.thinkingDepth = diff === 'hard' ? 3 : 2;
+  }
+
+  /**
+   * Get best move for current board state
+   * Easy:   Random valid move
+   * Medium: Heuristic (prefer merges, empty cells, corner)
+   * Hard:   Tree search (looks ahead N moves)
+   */
+  getBestMove(board) {
+    const validMoves = this._getValidMoves(board);
+    if (validMoves.length === 0) return null;
+
+    switch (this.difficulty) {
+      case 'easy':   return this._easyMove(validMoves);
+      case 'medium': return this._mediumMove(board, validMoves);
+      case 'hard':   return this._hardMove(board);
+      default:       return this._mediumMove(board, validMoves);
+    }
+  }
+
+  _easyMove(validMoves) {
+    return validMoves[Math.floor(Math.random() * validMoves.length)];
+  }
+
+  _mediumMove(board, validMoves) {
+    // Priority: moves that create merges > moves that free empty cells > random
+    let bestMove = validMoves[0];
+    let bestScore = -Infinity;
+
+    for (const move of validMoves) {
+      const result = this.gameTree._simulateMove(board, move);
+      if (!result.changed) continue;
+
+      let score = 0;
+      const flat = result.board.flat();
+      const empty = flat.filter(v => v === 0).length;
+      const maxTile = Math.max(...flat);
+
+      score += empty * 8;
+      score += result.score; // tiles merged value
+
+      // Prefer max tile in corner
+      const b = result.board;
+      if (b[0][0] === maxTile || b[0][3] === maxTile ||
+          b[3][0] === maxTile || b[3][3] === maxTile) {
+        score += maxTile;
+      }
+
+      if (score > bestScore) {
+        bestScore = score;
+        bestMove = move;
+      }
+    }
+    return bestMove;
+  }
+
+  _hardMove(board) {
+    this.gameTree.build(board, this.thinkingDepth);
+    return this.gameTree.getBestMove() || this._mediumMove(board, this._getValidMoves(board));
+  }
+
+  _getValidMoves(board) {
+    return ['up', 'down', 'left', 'right'].filter(move => {
+      const result = this.gameTree._simulateMove(board, move);
+      return result.changed;
+    });
+  }
+
+  getTreeVisualization() {
+    return this.gameTree.getVisualizationData();
+  }
+}
+
+window.AIPlayer = AIPlayer;
+
+
+/**
+ * GAME2048 - Core game logic
+ * Uses Stack (undo), Queue (move history), DoublyLinkedList (navigation), Graph (state tracking)
+ */
+class Game2048 {
+  constructor(options = {}) {
+    this.size = 4;
+    this.board = this._emptyBoard();
+    this.score = 0;
+    this.bestScore = parseInt(localStorage.getItem('dsa2048_best') || '0');
+    this.gameOver = false;
+    this.won = false;
+    this.winAcknowledged = false;
+    this.moveCount = 0;
+    this.mergeCount = 0;
+    this.undoCount = 0;
+    this.startTime = Date.now();
+
+    // DSA instances
+    this.undoStack = new Stack(50);
+    this.moveQueue = new Queue(100);
+    this.moveHistory = new DoublyLinkedList(30);
+    this.stateGraph = new Graph(150);
+
+    this.onStateChange = options.onStateChange || (() => {});
+    this.onWin = options.onWin || (() => {});
+    this.onGameOver = options.onGameOver || (() => {});
+    this.onMerge = options.onMerge || (() => {});
+    this.onDSAUpdate = options.onDSAUpdate || (() => {});
+
+    this._addRandomTile();
+    this._addRandomTile();
+    this._notifyDSA();
+  }
+
+  _emptyBoard() {
+    return Array.from({ length: 4 }, () => Array(4).fill(0));
+  }
+
+  _deepCopy(board) {
+    return board.map(row => [...row]);
+  }
+
+  _addRandomTile() {
+    const empty = [];
+    for (let r = 0; r < 4; r++)
+      for (let c = 0; c < 4; c++)
+        if (this.board[r][c] === 0) empty.push([r, c]);
+    if (empty.length === 0) return null;
+    const [r, c] = empty[Math.floor(Math.random() * empty.length)];
+    this.board[r][c] = Math.random() < 0.9 ? 2 : 4;
+    return [r, c];
+  }
+
+  move(direction) {
+    if (this.gameOver) return false;
+
+    // Save state to undo stack before moving
+    const prevState = {
+      board: this._deepCopy(this.board),
+      score: this.score,
+      moveCount: this.moveCount
+    };
+
+    const prevBoard = this._deepCopy(this.board);
+    let changed = false;
+    let gained = 0;
+    let merges = 0;
+
+    const result = this._applyMove(direction);
+    changed = result.changed;
+    gained = result.score;
+    merges = result.merges;
+
+    if (!changed) return false;
+
+    // Record previous board in graph before tile spawn
+    const newTile = this._addRandomTile();
+
+    // Update score
+    this.score += gained;
+    if (this.score > this.bestScore) {
+      this.bestScore = this.score;
+      localStorage.setItem('dsa2048_best', this.bestScore);
+    }
+
+    // Update counters
+    this.moveCount++;
+    this.mergeCount += merges;
+
+    // Push to undo stack (LIFO - last move undone first)
+    this.undoStack.push(prevState);
+
+    // Enqueue move (FIFO - for action replay)
+    this.moveQueue.enqueue({
+      direction,
+      score: gained,
+      merges,
+      moveNumber: this.moveCount,
+      timestamp: Date.now()
+    });
+
+    // Append to doubly linked list for navigation
+    this.moveHistory.append({
+      board: this._deepCopy(this.board),
+      score: this.score,
+      move: direction,
+      moveNumber: this.moveCount
+    });
+
+    // Add edge to state graph
+    this.stateGraph.addEdge(prevBoard, this.board, direction);
+
+    if (merges > 0) this.onMerge(merges, gained);
+
+    // Check win
+    if (!this.won && !this.winAcknowledged && this.board.flat().includes(2048)) {
+      this.won = true;
+      this.onWin();
+    }
+
+    // Check game over
+    if (!this._hasValidMoves()) {
+      this.gameOver = true;
+      this.onGameOver(this.score);
+    }
+
+    this._notifyDSA();
+    this.onStateChange(this.board, this.score);
+    return true;
+  }
+
+  undo() {
+    if (this.undoStack.isEmpty()) return false;
+    const prev = this.undoStack.pop();
+    this.board = prev.board;
+    this.score = prev.score;
+    this.moveCount = prev.moveCount;
+    this.undoCount++;
+    this.gameOver = false;
+    this._notifyDSA();
+    this.onStateChange(this.board, this.score);
+    return true;
+  }
+
+  _applyMove(direction) {
+    let board = this._deepCopy(this.board);
+    let totalScore = 0;
+    let totalMerges = 0;
+    let changed = false;
+
+    // Normalize: always slide left, then rotate back
+    const rotateBoard = (b, times) => {
+      let res = b;
+      for (let t = 0; t < ((times % 4) + 4) % 4; t++) {
+        res = res[0].map((_, i) => res.map(row => row[i]).reverse());
+      }
+      return res;
+    };
+
+    const rotations = { left: 0, up: 1, right: 2, down: 3 };
+    const rot = rotations[direction];
+
+    board = rotateBoard(board, rot);
+    for (let r = 0; r < 4; r++) {
+      const { row, score, merges, rowChanged } = this._slideLeft(board[r]);
+      board[r] = row;
+      totalScore += score;
+      totalMerges += merges;
+      if (rowChanged) changed = true;
+    }
+    board = rotateBoard(board, (4 - rot) % 4);
+
+    if (changed) this.board = board;
+    return { changed, score: totalScore, merges: totalMerges };
+  }
+
+  _slideLeft(row) {
+    let arr = row.filter(v => v !== 0);
+    let score = 0, merges = 0;
+    for (let i = 0; i < arr.length - 1; i++) {
+      if (arr[i] === arr[i + 1]) {
+        arr[i] *= 2;
+        score += arr[i];
+        merges++;
+        arr.splice(i + 1, 1);
+      }
+    }
+    const newRow = [...arr, ...Array(4 - arr.length).fill(0)];
+    const rowChanged = newRow.join(',') !== row.join(',');
+    return { row: newRow, score, merges, rowChanged };
+  }
+
+  _hasValidMoves() {
+    for (let r = 0; r < 4; r++)
+      for (let c = 0; c < 4; c++) {
+        if (this.board[r][c] === 0) return true;
+        if (c < 3 && this.board[r][c] === this.board[r][c + 1]) return true;
+        if (r < 3 && this.board[r][c] === this.board[r + 1][c]) return true;
+      }
+    return false;
+  }
+
+  getMaxTile() {
+    return Math.max(...this.board.flat());
+  }
+
+  getElapsedTime() {
+    return Math.floor((Date.now() - this.startTime) / 1000);
+  }
+
+  getStats() {
+    return {
+      score: this.score,
+      bestScore: this.bestScore,
+      maxTile: this.getMaxTile(),
+      moves: this.moveCount,
+      merges: this.mergeCount,
+      undos: this.undoCount,
+      time: this.getElapsedTime(),
+      undoStackSize: this.undoStack.size(),
+      queueSize: this.moveQueue.size(),
+      historySize: this.moveHistory.size(),
+      graphNodes: this.stateGraph.nodeCount(),
+      graphEdges: this.stateGraph.edgeCount()
+    };
+  }
+
+  saveGame(slot = 'default') {
+    const save = {
+      board: this.board,
+      score: this.score,
+      moveCount: this.moveCount,
+      mergeCount: this.mergeCount,
+      timestamp: Date.now()
+    };
+    localStorage.setItem(`dsa2048_save_${slot}`, JSON.stringify(save));
+    return save;
+  }
+
+  loadGame(slot = 'default') {
+    const raw = localStorage.getItem(`dsa2048_save_${slot}`);
+    if (!raw) return false;
+    const save = JSON.parse(raw);
+    this.board = save.board;
+    this.score = save.score;
+    this.moveCount = save.moveCount || 0;
+    this.mergeCount = save.mergeCount || 0;
+    this.gameOver = false;
+    this._notifyDSA();
+    this.onStateChange(this.board, this.score);
+    return true;
+  }
+
+  _notifyDSA() {
+    this.onDSAUpdate({
+      stack: this.undoStack.toArray(),
+      queue: this.moveQueue.toArray(),
+      history: this.moveHistory.toArray(),
+      graph: this.stateGraph.getRecentChain(),
+      graphStats: {
+        nodes: this.stateGraph.nodeCount(),
+        edges: this.stateGraph.edgeCount()
+      }
+    });
+  }
+
+  reset() {
+    this.board = this._emptyBoard();
+    this.score = 0;
+    this.gameOver = false;
+    this.won = false;
+    this.winAcknowledged = false;
+    this.moveCount = 0;
+    this.mergeCount = 0;
+    this.undoCount = 0;
+    this.startTime = Date.now();
+    this.undoStack.clear();
+    this.moveQueue.clear();
+    this.moveHistory.clear();
+    this.stateGraph.clear();
+    this._addRandomTile();
+    this._addRandomTile();
+    this._notifyDSA();
+    this.onStateChange(this.board, this.score);
+  }
+}
+
+window.Game2048 = Game2048;
+
+
+/**
+ * DSA 2048 Arena - Main Application Controller
+ * Orchestrates all game modes, UI rendering, and DSA visualizations
+ */
+
+// ─── LEADERBOARD MANAGER ────────────────────────────────────────────────────
+class LeaderboardManager {
+  constructor() {
+    this.bst = new BST();
+    this._load();
+  }
+
+  addEntry(name, mode, score, tile) {
+    const data = { name, mode, tile, date: new Date().toLocaleDateString() };
+    this.bst.insert(score, data);
+    this._save();
+  }
+
+  getTop10() {
+    return this.bst.getTopN(10);
+  }
+
+  getBSTStructure() {
+    return this.bst.getTreeStructure();
+  }
+
+  _save() {
+    const entries = this.bst.inOrder();
+    localStorage.setItem('dsa2048_leaderboard', JSON.stringify(entries));
+  }
+
+  _load() {
+    const raw = localStorage.getItem('dsa2048_leaderboard');
+    if (!raw) return;
+    try {
+      const entries = JSON.parse(raw);
+      entries.forEach(e => this.bst.insert(e.score, { name: e.name, mode: e.mode, tile: e.tile, date: e.date }));
+    } catch(e) {}
+  }
+
+  clear() {
+    this.bst.clear();
+    localStorage.removeItem('dsa2048_leaderboard');
+  }
+}
+
+// ─── ACHIEVEMENT SYSTEM ──────────────────────────────────────────────────────
+const ACHIEVEMENTS = [
+  { id: 'first_merge', title: 'First Merge', desc: 'Make your first tile merge', icon: '🔗', condition: s => s.merges >= 1 },
+  { id: 'tile_128',    title: 'Centurion+',  desc: 'Reach tile 128', icon: '🏅', condition: s => s.maxTile >= 128 },
+  { id: 'tile_512',    title: 'High Roller', desc: 'Reach tile 512', icon: '🥈', condition: s => s.maxTile >= 512 },
+  { id: 'tile_1024',   title: 'Grandmaster', desc: 'Reach tile 1024', icon: '🥇', condition: s => s.maxTile >= 1024 },
+  { id: 'tile_2048',   title: '2048 Legend', desc: 'Reach tile 2048!', icon: '🏆', condition: s => s.maxTile >= 2048 },
+  { id: 'moves_100',   title: 'Century Moves',desc: 'Make 100 moves', icon: '💯', condition: s => s.moves >= 100 },
+  { id: 'score_10k',   title: 'Score Master', desc: 'Score 10,000+', icon: '⭐', condition: s => s.score >= 10000 },
+  { id: 'undo_pro',    title: 'Time Traveler',desc: 'Use undo 10 times', icon: '⏮️', condition: s => s.undos >= 10 },
+  { id: 'ai_slayer',   title: 'AI Slayer',    desc: 'Beat the AI in VS mode', icon: '🤖', condition: s => s.beatAI },
+  { id: 'multi_champ', title: 'Multiplayer Champion', desc: 'Win a 2-player match', icon: '👑', condition: s => s.wonMultiplayer },
+];
+
+class AchievementManager {
+  constructor() {
+    this.unlocked = new Set(JSON.parse(localStorage.getItem('dsa2048_achievements') || '[]'));
+  }
+
+  check(stats, callback) {
+    ACHIEVEMENTS.forEach(ach => {
+      if (!this.unlocked.has(ach.id) && ach.condition(stats)) {
+        this.unlocked.add(ach.id);
+        this._save();
+        if (callback) callback(ach);
+      }
+    });
+  }
+
+  getAll() {
+    return ACHIEVEMENTS.map(a => ({ ...a, unlocked: this.unlocked.has(a.id) }));
+  }
+
+  _save() {
+    localStorage.setItem('dsa2048_achievements', JSON.stringify([...this.unlocked]));
+  }
+}
+
+// ─── MAIN APP ────────────────────────────────────────────────────────────────
+class App {
+  constructor() {
+    this.currentPage = 'menu';
+    this.currentMode = 'single';
+    this.game1 = null;
+    this.game2 = null;
+    this.aiPlayer = new AIPlayer('medium');
+    this.aiInterval = null;
+    this.leaderboard = new LeaderboardManager();
+    this.achievements = new AchievementManager();
+    this.dsaData = {};
+    this.timerInterval = null;
+    this.p1Stats = { merges: 0, score: 0, maxTile: 2, moves: 0, undos: 0, time: 0, beatAI: false, wonMultiplayer: false };
+    this.gamesPlayed = parseInt(localStorage.getItem('dsa2048_gamesPlayed') || '0');
+    this.gamesWon = parseInt(localStorage.getItem('dsa2048_gamesWon') || '0');
+    this._bindNav();
+    this._initParticles();
+    this._renderLeaderboardPage();
+    this._renderAchievementsSection();
+  }
+
+  // ─── NAVIGATION ─────────────────────────────────────────────────────────
+  _bindNav() {
+    document.querySelectorAll('[data-page]').forEach(btn => {
+      btn.addEventListener('click', () => this.showPage(btn.dataset.page));
+    });
+    document.querySelectorAll('[data-mode]').forEach(btn => {
+      btn.addEventListener('click', () => this._selectMode(btn.dataset.mode));
+    });
+  }
+
+  showPage(page) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    const target = document.getElementById(`page-${page}`);
+    if (target) {
+      target.classList.add('active');
+      this.currentPage = page;
+    }
+    if (page === 'leaderboard') this._renderLeaderboardPage();
+    if (page === 'dashboard') { this._renderDashboard(); this._renderAchievementsSection(); }
+  }
+
+  _selectMode(mode) {
+    this.currentMode = mode;
+    document.querySelectorAll('.mode-card').forEach(c => c.classList.remove('selected'));
+    const card = document.querySelector(`.mode-card[data-mode="${mode}"]`);
+    if (card) card.classList.add('selected');
+
+    // Show/hide AI difficulty
+    const aiSection = document.getElementById('ai-difficulty-section');
+    if (aiSection) aiSection.style.display = mode === 'ai' ? 'block' : 'none';
+
+    // Show start button
+    const startBtn = document.getElementById('start-mode-btn');
+    if (startBtn) startBtn.style.display = 'block';
+  }
+
+  startGame() {
+    this._stopAI();
+    this._clearTimer();
+    if (this.game1) { this.game1.undoStack.clear(); }
+
+    if (this.currentMode === 'two') {
+      this._startTwoPlayer();
+    } else if (this.currentMode === 'ai') {
+      this._startAIMode();
+    } else {
+      this._startSinglePlayer();
+    }
+
+    this.showPage('game');
+    this._startTimer();
+  }
+
+  // ─── SINGLE PLAYER ──────────────────────────────────────────────────────
+  _startSinglePlayer() {
+    document.getElementById('game-board-2-container').style.display = 'none';
+    document.getElementById('game-board-1-container').style.display = 'block';
+    document.getElementById('game-mode-label').textContent = '⚡ Single Player';
+
+    this.game1 = new Game2048({
+      onStateChange: (board, score) => {
+        this._renderBoard('board1', board);
+        this._updateScoreDisplay('p1-score', score, this.game1.bestScore);
+        this._checkAchievements(this.game1);
+      },
+      onWin: () => this._showWinModal(this.game1.score),
+      onGameOver: (score) => this._handleGameOver(score, 'Single Player'),
+      onMerge: (count, gained) => this._showMergeEffect('board1', gained),
+      onDSAUpdate: (data) => { this.dsaData = data; this._renderDSAWidgets(data); }
+    });
+
+    this._renderBoard('board1', this.game1.board);
+    this._setupKeyboard();
+  }
+
+  // ─── TWO PLAYER ─────────────────────────────────────────────────────────
+  _startTwoPlayer() {
+    document.getElementById('game-board-2-container').style.display = 'block';
+    document.getElementById('game-board-1-container').style.display = 'block';
+    document.getElementById('game-mode-label').textContent = '👥 Two Player';
+
+    this.game1 = new Game2048({
+      onStateChange: (board, score) => {
+        this._renderBoard('board1', board);
+        this._updateScoreDisplay('p1-score', score, this.game1.bestScore);
+        this._checkTwoPlayerWin();
+      },
+      onWin: () => this._announceTwoPlayerWinner('Player 1 reached 2048!'),
+      onGameOver: () => this._checkTwoPlayerWin(),
+      onDSAUpdate: (data) => { this.dsaData = data; this._renderDSAWidgets(data); }
+    });
+
+    this.game2 = new Game2048({
+      onStateChange: (board, score) => {
+        this._renderBoard('board2', board);
+        this._updateScoreDisplay('p2-score', score, this.game2.bestScore);
+        this._checkTwoPlayerWin();
+      },
+      onWin: () => this._announceTwoPlayerWinner('Player 2 reached 2048!'),
+      onGameOver: () => this._checkTwoPlayerWin(),
+      onDSAUpdate: () => {}
+    });
+
+    this._renderBoard('board1', this.game1.board);
+    this._renderBoard('board2', this.game2.board);
+    this._setupKeyboard();
+  }
+
+  _checkTwoPlayerWin() {
+    if (!this.game1 || !this.game2) return;
+    if (this.game1.gameOver && this.game2.gameOver) {
+      const winner = this.game1.score >= this.game2.score ? 'Player 1' : 'Player 2';
+      this._announceTwoPlayerWinner(`${winner} wins with ${Math.max(this.game1.score, this.game2.score)} points!`);
+    }
+  }
+
+  _announceTwoPlayerWinner(msg) {
+    this._showModal('🏆 Game Over!', msg, () => {
+      this.achievements.check({ wonMultiplayer: true }, (ach) => this._showAchievement(ach));
+      this.showPage('menu');
+    });
+  }
+
+  // ─── AI MODE ────────────────────────────────────────────────────────────
+  _startAIMode() {
+    const diff = document.getElementById('ai-difficulty')?.value || 'medium';
+    this.aiPlayer.setDifficulty(diff);
+
+    document.getElementById('game-board-2-container').style.display = 'block';
+    document.getElementById('game-board-1-container').style.display = 'block';
+    document.getElementById('game-mode-label').textContent = `🤖 vs AI (${diff})`;
+
+    this.game1 = new Game2048({
+      onStateChange: (board, score) => {
+        this._renderBoard('board1', board);
+        this._updateScoreDisplay('p1-score', score, this.game1.bestScore);
+      },
+      onWin: () => this._handleAIResult('You won! You reached 2048!', true),
+      onGameOver: () => this._handleAIResult(
+        `Game Over! Your score: ${this.game1.score} vs AI: ${this.game2?.score || 0}`, 
+        this.game1.score > (this.game2?.score || 0)
+      ),
+      onDSAUpdate: (data) => { this.dsaData = data; this._renderDSAWidgets(data); }
+    });
+
+    this.game2 = new Game2048({
+      onStateChange: (board, score) => {
+        this._renderBoard('board2', board);
+        this._updateScoreDisplay('p2-score', score, this.game2.bestScore);
+        this._renderTreeViz();
+      },
+      onWin: () => this._handleAIResult('AI reached 2048! Better luck next time.', false),
+      onGameOver: () => {
+        // AI board game over — AI lost, player wins regardless of their current score
+        const humanScore = this.game1 ? this.game1.score : 0;
+        const aiScore = this.game2 ? this.game2.score : 0;
+        const playerWon = humanScore >= aiScore;
+        this._handleAIResult(
+          playerWon
+            ? `AI ran out of moves! Your score: ${humanScore.toLocaleString()} vs AI: ${aiScore.toLocaleString()}`
+            : `AI ran out of moves! AI score: ${aiScore.toLocaleString()} vs Your score: ${humanScore.toLocaleString()}`,
+          playerWon
+        );
+      },
+      onDSAUpdate: () => {}
+    });
+
+    this._renderBoard('board1', this.game1.board);
+    this._renderBoard('board2', this.game2.board);
+    this._setupKeyboard();
+    this._startAI();
+  }
+
+  _startAI() {
+    this.aiInterval = setInterval(() => {
+      if (!this.game2) return;
+      if (this.game2.gameOver) {
+        this._stopAI();
+        return;
+      }
+      const move = this.aiPlayer.getBestMove(this.game2.board);
+      if (move) {
+        this.game2.move(move);
+        this._renderTreeViz();
+      } else {
+        // No valid moves — force game over on AI board
+        this.game2.gameOver = true;
+        this._stopAI();
+        const humanScore = this.game1 ? this.game1.score : 0;
+        const aiScore = this.game2 ? this.game2.score : 0;
+        this._handleAIResult(
+          `AI ran out of moves! Your score: ${humanScore.toLocaleString()} vs AI: ${aiScore.toLocaleString()}`,
+          humanScore >= aiScore
+        );
+      }
+    }, this.aiPlayer.moveDelay);
+  }
+
+  _stopAI() {
+    if (this.aiInterval) { clearInterval(this.aiInterval); this.aiInterval = null; }
+  }
+
+  _handleAIResult(msg, playerWon) {
+    this._stopAI();
+    this._showModal(playerWon ? '🎉 You Won!' : '😔 AI Won', msg, () => this.showPage('menu'));
+    if (playerWon) {
+      this.achievements.check({ beatAI: true }, (ach) => this._showAchievement(ach));
+    }
+  }
+
+  // ─── KEYBOARD CONTROLS ──────────────────────────────────────────────────
+  _setupKeyboard() {
+    document.onkeydown = (e) => {
+      const map = {
+        ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right',
+        w: 'up', s: 'down', a: 'left', d: 'right',
+        W: 'up', S: 'down', A: 'left', D: 'right'
+      };
+      const dir = map[e.key];
+      if (!dir) return;
+      e.preventDefault();
+
+      if (this.currentMode === 'two') {
+        // WASD = Player 1, Arrows = Player 2
+        if (['w','s','a','d','W','S','A','D'].includes(e.key)) {
+          this.game1?.move(dir);
+        } else {
+          this.game2?.move(dir);
+        }
+      } else {
+        this.game1?.move(dir);
+      }
+    };
+  }
+
+  // ─── BOARD RENDERING ────────────────────────────────────────────────────
+  _renderBoard(boardId, board) {
+    const el = document.getElementById(boardId);
+    if (!el) return;
+
+    const prev = {};
+    el.querySelectorAll('.tile[data-value]').forEach(t => {
+      prev[`${t.dataset.row}-${t.dataset.col}`] = t.dataset.value;
+    });
+
+    el.innerHTML = '';
+    for (let r = 0; r < 4; r++) {
+      for (let c = 0; c < 4; c++) {
+        const val = board[r][c];
+        const tile = document.createElement('div');
+        tile.className = `tile ${val ? `tile-${Math.min(val, 2048)}` : 'tile-empty'}`;
+        tile.dataset.row = r;
+        tile.dataset.col = c;
+        tile.dataset.value = val;
+        if (val) {
+          tile.textContent = val >= 1024 ? (val >= 2048 ? '2K+' : '1K') : val;
+          tile.setAttribute('data-label', val);
+          // Animate new tiles
+          if (!prev[`${r}-${c}`] || prev[`${r}-${c}`] === '0') {
+            tile.classList.add('tile-new');
+          }
+          // Animate merges (simplified: bigger tiles assumed merged)
+          if (prev[`${r}-${c}`] && parseInt(prev[`${r}-${c}`]) === val / 2) {
+            tile.classList.add('tile-merge');
+          }
+        }
+        el.appendChild(tile);
+      }
+    }
+  }
+
+  _updateScoreDisplay(elId, score, best) {
+    const el = document.getElementById(elId);
+    if (el) el.textContent = score.toLocaleString();
+    const bestEl = document.getElementById(elId.replace('score', 'best'));
+    if (bestEl) bestEl.textContent = best.toLocaleString();
+  }
+
+  // ─── DSA VISUALIZATIONS ─────────────────────────────────────────────────
+  _renderDSAWidgets(data) {
+    this._renderStackWidget(data.stack);
+    this._renderQueueWidget(data.queue);
+    this._renderLinkedListWidget(data.history);
+    this._renderGraphWidget(data.graph, data.graphStats);
+    if (this.currentPage === 'dashboard') {
+      this._renderDashboard();
+    }
+  }
+
+  _renderStackWidget(stack) {
+    const el = document.getElementById('stack-viz-mini');
+    if (!el) return;
+    const items = stack.slice(-5).reverse();
+    el.innerHTML = items.map((item, i) => `
+      <div class="stack-item ${i === 0 ? 'stack-top' : ''}">
+        <span class="stack-label">${i === 0 ? 'TOP' : ''}</span>
+        <span class="stack-value">Score: ${item.score}</span>
+      </div>
+    `).join('') + `<div class="dsa-stat">Size: ${stack.length}</div>`;
+  }
+
+  _renderQueueWidget(queue) {
+    const el = document.getElementById('queue-viz-mini');
+    if (!el) return;
+    const items = queue.slice(-4);
+    el.innerHTML = `<div class="queue-label-row"><span>FRONT</span><span>REAR</span></div>` +
+      `<div class="queue-items">` +
+      items.map(item => `<div class="queue-item">
+        <div class="q-dir">${item.direction?.toUpperCase()}</div>
+        <div class="q-score">+${item.score}</div>
+      </div>`).join('<span class="q-arrow">→</span>') +
+      `</div><div class="dsa-stat">Queued: ${queue.length}</div>`;
+  }
+
+  _renderLinkedListWidget(history) {
+    const el = document.getElementById('dll-viz-mini');
+    if (!el) return;
+    const items = history.slice(-5);
+    el.innerHTML = items.map((item, i) => `
+      <div class="dll-node ${item.isCurrent ? 'dll-current' : ''}">
+        <div class="dll-move">${item.data?.move?.toUpperCase() || 'START'}</div>
+        <div class="dll-score">S:${item.data?.score || 0}</div>
+      </div>
+      ${i < items.length - 1 ? '<span class="dll-arrow">⇌</span>' : ''}
+    `).join('') + `<div class="dsa-stat">History: ${history.length}</div>`;
+  }
+
+  _renderGraphWidget(chain, stats) {
+    const el = document.getElementById('graph-viz-mini');
+    if (!el) return;
+    el.innerHTML = `
+      <div class="graph-chain">
+        ${chain.map(n => `<div class="graph-node">
+          <div class="gn-hash">${n.hash}</div>
+          <div class="gn-visits">v:${n.visits}</div>
+        </div>`).join('<span class="g-arrow">→</span>')}
+      </div>
+      <div class="dsa-stat">Nodes: ${stats?.nodes || 0} | Edges: ${stats?.edges || 0}</div>`;
+  }
+
+  _renderTreeViz() {
+    const el = document.getElementById('tree-viz-mini');
+    if (!el || !this.aiPlayer || !this.game2) return;
+    const vizData = this.aiPlayer.getTreeVisualization();
+    if (!vizData || !vizData.levels.length) return;
+
+    const root = vizData.levels[0]?.[0];
+    const children = vizData.levels[1] || [];
+
+    el.innerHTML = `
+      <div class="tree-root">
+        <div class="tree-node root-node">CURRENT</div>
+      </div>
+      <div class="tree-children">
+        ${children.map(c => `
+          <div class="tree-node ${c.isSelected ? 'tree-selected' : ''}">
+            <div class="tn-move">${c.move?.toUpperCase()}</div>
+            <div class="tn-score">${c.score}</div>
+          </div>
+        `).join('')}
+      </div>
+      <div class="dsa-stat">Nodes: ${vizData.totalNodes}</div>
+    `;
+  }
+
+  // ─── FULL DASHBOARD ─────────────────────────────────────────────────────
+  _renderDashboard() {
+    // Update global stats even without active game
+    const storedBest = parseInt(localStorage.getItem('dsa2048_best') || '0');
+    const el_games = document.getElementById('stat-games');
+    const el_won   = document.getElementById('stat-won');
+    if (el_games) el_games.textContent = this.gamesPlayed;
+    if (el_won)   el_won.textContent   = this.gamesWon;
+    const el_best = document.getElementById('stat-best');
+    if (el_best && !this.game1) el_best.textContent = storedBest.toLocaleString();
+    // Always render BST leaderboard
+    this._renderBSTViz();
+    if (!this.game1) {
+      // No active game — show placeholder messages for DSA sections
+      ['dash-stack','dash-queue','dash-dll','dash-graph'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el && el.innerHTML.includes('Start a game')) {
+          el.innerHTML = `<div class="dash-viz-title">${id === 'dash-stack' ? 'Undo Stack (LIFO)' : id === 'dash-queue' ? 'Move Queue (FIFO)' : id === 'dash-dll' ? 'Move History (Doubly Linked List)' : 'State Graph (Adjacency List)'}</div><div class="empty-viz">▶ Start a game, then come back here to see live data</div>`;
+        }
+      });
+      return;
+    }
+    const stats = this.game1.getStats();
+    this._renderFullStack();
+    this._renderFullQueue();
+    this._renderFullDLL();
+    this._renderFullGraph();
+    this._renderBSTViz();
+    this._updateStatsCards(stats);
+  }
+
+  _renderFullStack() {
+    const el = document.getElementById('dash-stack');
+    if (!el || !this.game1) return;
+    const items = this.game1.undoStack.toArray().reverse();
+    el.innerHTML = `<div class="dash-viz-title">Undo Stack (LIFO)</div>` +
+      (items.length ? items.slice(0, 8).map((item, i) =>
+        `<div class="dash-stack-item ${i === 0 ? 'dash-top' : ''}">
+          <span class="badge">${i === 0 ? 'TOP' : items.length - i}</span>
+          Move #${item.moveCount} | Score: ${item.score}
+        </div>`
+      ).join('') : '<div class="empty-viz">Stack empty — make some moves</div>') +
+      `<div class="viz-info">Push O(1) | Pop O(1) | Size: ${items.length}</div>`;
+  }
+
+  _renderFullQueue() {
+    const el = document.getElementById('dash-queue');
+    if (!el || !this.game1) return;
+    const items = this.game1.moveQueue.toArray();
+    el.innerHTML = `<div class="dash-viz-title">Move Queue (FIFO)</div>
+      <div class="dash-queue-row">
+        ${items.slice(-6).map((item, i, arr) =>
+          `<div class="dash-queue-item ${i === 0 ? 'dash-front' : i === arr.length-1 ? 'dash-rear' : ''}">
+            <div>${item.direction?.toUpperCase()}</div>
+            <div class="q-small">+${item.score}</div>
+          </div>
+          ${i < arr.length-1 ? '<span>→</span>' : ''}`
+        ).join('')}
+        ${items.length === 0 ? '<div class="empty-viz">Queue empty</div>' : ''}
+      </div>
+      <div class="viz-info">Enqueue O(1) | Dequeue O(1) | Size: ${items.length}</div>`;
+  }
+
+  _renderFullDLL() {
+    const el = document.getElementById('dash-dll');
+    if (!el || !this.game1) return;
+    const items = this.game1.moveHistory.toArray();
+    el.innerHTML = `<div class="dash-viz-title">Move History (Doubly Linked List)</div>
+      <div class="dash-dll-row">
+        ${items.slice(-6).map((item, i, arr) =>
+          `<div class="dash-dll-node ${item.isCurrent ? 'dll-curr' : ''}">
+            <div>${item.data?.move?.toUpperCase() || 'START'}</div>
+            <div class="q-small">S:${item.data?.score || 0}</div>
+          </div>
+          ${i < arr.length-1 ? '<span class="dll-bi">⇌</span>' : ''}`
+        ).join('')}
+        ${items.length === 0 ? '<div class="empty-viz">No history yet</div>' : ''}
+      </div>
+      <div class="viz-info">Insert O(1) | Navigate O(1) | Size: ${items.length}</div>`;
+  }
+
+  _renderFullGraph() {
+    const el = document.getElementById('dash-graph');
+    if (!el || !this.game1) return;
+    const stats = { nodes: this.game1.stateGraph.nodeCount(), edges: this.game1.stateGraph.edgeCount() };
+    const chain = this.game1.stateGraph.getRecentChain();
+    el.innerHTML = `<div class="dash-viz-title">State Graph (Adjacency List)</div>
+      <div class="dash-graph-row">
+        ${chain.map((n, i) =>
+          `<div class="dash-graph-node">
+            <div class="gn-mini">${n.hash}</div>
+            <div class="q-small">v:${n.visits} e:${n.edges}</div>
+          </div>
+          ${i < chain.length-1 ? '<span>→</span>' : ''}`
+        ).join('')}
+        ${chain.length === 0 ? '<div class="empty-viz">No states recorded yet</div>' : ''}
+      </div>
+      <div class="viz-info">Nodes: ${stats.nodes} | Edges: ${stats.edges} | Add O(1)</div>`;
+  }
+
+  _renderBSTViz() {
+    const el = document.getElementById('dash-bst');
+    if (!el) return;
+    const top = this.leaderboard.getTop10();
+    el.innerHTML = `<div class="dash-viz-title">Leaderboard BST (In-order)</div>
+      <div class="bst-list">
+        ${top.length ? top.map((e, i) =>
+          `<div class="bst-row">
+            <span class="bst-rank">#${i+1}</span>
+            <span class="bst-name">${e.name}</span>
+            <span class="bst-score">${e.score?.toLocaleString()}</span>
+            <span class="bst-mode">${e.mode}</span>
+          </div>`
+        ).join('') : '<div class="empty-viz">No scores yet — play a game!</div>'}
+      </div>
+      <div class="viz-info">Insert O(log n) | Search O(log n) | Traverse O(n)</div>`;
+  }
+
+  _updateStatsCards(stats) {
+    const map = {
+      'stat-score': stats.score,
+      'stat-best': stats.bestScore,
+      'stat-tile': stats.maxTile,
+      'stat-moves': stats.moves,
+      'stat-merges': stats.merges,
+      'stat-undos': stats.undos,
+      'stat-time': this._formatTime(stats.time),
+      'stat-games': this.gamesPlayed,
+      'stat-won': this.gamesWon,
+      'stat-graph': stats.graphNodes
+    };
+    Object.entries(map).forEach(([id, val]) => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = val;
+    });
+  }
+
+  // ─── LEADERBOARD PAGE ───────────────────────────────────────────────────
+  _renderLeaderboardPage() {
+    const el = document.getElementById('leaderboard-list');
+    if (!el) return;
+    const top = this.leaderboard.getTop10();
+    if (!top.length) {
+      el.innerHTML = '<div class="empty-lb">No scores yet. Play a game to get on the board!</div>';
+      return;
+    }
+    el.innerHTML = top.map((e, i) => `
+      <div class="lb-row ${i === 0 ? 'lb-gold' : i === 1 ? 'lb-silver' : i === 2 ? 'lb-bronze' : ''}">
+        <span class="lb-rank">${i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `#${i+1}`}</span>
+        <span class="lb-name">${e.name}</span>
+        <span class="lb-score">${e.score?.toLocaleString()}</span>
+        <span class="lb-tile">Tile: ${e.tile}</span>
+        <span class="lb-mode">${e.mode}</span>
+        <span class="lb-date">${e.date}</span>
+      </div>
+    `).join('');
+  }
+
+  _renderAchievementsSection() {
+    const el = document.getElementById('achievements-grid');
+    if (!el) return;
+    el.innerHTML = this.achievements.getAll().map(a => `
+      <div class="ach-card ${a.unlocked ? 'ach-unlocked' : 'ach-locked'}">
+        <div class="ach-icon">${a.icon}</div>
+        <div class="ach-title">${a.title}</div>
+        <div class="ach-desc">${a.desc}</div>
+      </div>
+    `).join('');
+  }
+
+  _checkAchievements(game) {
+    const stats = game.getStats();
+    this.achievements.check({
+      ...stats,
+      merges: stats.merges
+    }, (ach) => this._showAchievement(ach));
+  }
+
+  // ─── MODALS & NOTIFICATIONS ─────────────────────────────────────────────
+  _showModal(title, msg, onClose) {
+    const overlay = document.getElementById('modal-overlay');
+    const mTitle = document.getElementById('modal-title');
+    const mMsg = document.getElementById('modal-message');
+    const mBtn = document.getElementById('modal-btn');
+    if (!overlay) return;
+    mTitle.textContent = title;
+    mMsg.textContent = msg;
+    overlay.classList.add('active');
+    mBtn.onclick = () => {
+      overlay.classList.remove('active');
+      if (onClose) onClose();
+    };
+  }
+
+  _showWinModal(score) {
+    if (this.game1) this.game1.winAcknowledged = true;
+    this.gamesWon++;
+    localStorage.setItem('dsa2048_gamesWon', this.gamesWon);
+    this._launchConfetti();
+    const modeLabel = { single: 'Single Player', two: 'Two Player', ai: 'vs AI' }[this.currentMode] || this.currentMode;
+    const tile = this.game1?.getMaxTile() || 2048;
+    const overlay = document.getElementById('modal-overlay');
+    const mTitle = document.getElementById('modal-title');
+    const mMsg = document.getElementById('modal-message');
+    const mBtn = document.getElementById('modal-btn');
+    if (!overlay) return;
+    mTitle.textContent = '🎉 You reached 2048!';
+    mMsg.innerHTML = `<div style="color:var(--green-neon);margin-bottom:1rem;font-size:1.1rem">Score: <strong>${score.toLocaleString()}</strong></div>
+      <div style="color:var(--text-muted);margin-bottom:1rem;font-size:0.9rem">Keep playing for higher tiles! Save your score first:</div>
+      <input id="lb-name-input" type="text" placeholder="Your name for leaderboard" maxlength="20"
+        style="width:100%;padding:0.6rem 1rem;background:rgba(255,255,255,0.06);border:1px solid rgba(124,58,237,0.5);
+               border-radius:8px;color:#f1f0ff;font-size:1rem;outline:none;font-family:inherit;" />`;
+    mBtn.textContent = 'Save & Keep Playing';
+    overlay.classList.add('active');
+    setTimeout(() => document.getElementById('lb-name-input')?.focus(), 100);
+    mBtn.onclick = () => {
+      const name = document.getElementById('lb-name-input')?.value?.trim() || 'Anonymous';
+      this.leaderboard.addEntry(name, modeLabel, score, tile);
+      this._renderLeaderboardPage();
+      overlay.classList.remove('active');
+      mBtn.textContent = 'Continue';
+    };
+  }
+
+  _handleGameOver(score, mode) {
+    this.gamesPlayed++;
+    localStorage.setItem('dsa2048_gamesPlayed', this.gamesPlayed);
+    this._stopAI();
+    this._clearTimer();
+    const modeLabel = mode || { single: 'Single Player', two: 'Two Player', ai: 'vs AI' }[this.currentMode] || this.currentMode;
+    const tile = this.game1?.getMaxTile() || 0;
+    // Show game over then immediately prompt for name
+    const overlay = document.getElementById('modal-overlay');
+    const mTitle = document.getElementById('modal-title');
+    const mMsg = document.getElementById('modal-message');
+    const mBtn = document.getElementById('modal-btn');
+    if (!overlay) return;
+    mTitle.textContent = '💀 Game Over';
+    mMsg.innerHTML = `<div style="color:var(--text-muted);margin-bottom:1rem">Final Score: <span style="color:var(--blue-neon);font-weight:700">${score.toLocaleString()}</span> &nbsp;|&nbsp; Best Tile: <span style="color:var(--purple-light);font-weight:700">${tile}</span></div>
+      <input id="lb-name-input" type="text" placeholder="Your name for leaderboard" maxlength="20"
+        style="width:100%;padding:0.6rem 1rem;background:rgba(255,255,255,0.06);border:1px solid rgba(124,58,237,0.5);
+               border-radius:8px;color:#f1f0ff;font-size:1rem;outline:none;font-family:inherit;" />`;
+    mBtn.textContent = 'Save & Continue';
+    overlay.classList.add('active');
+    setTimeout(() => document.getElementById('lb-name-input')?.focus(), 100);
+    mBtn.onclick = () => {
+      const name = document.getElementById('lb-name-input')?.value?.trim() || 'Anonymous';
+      this.leaderboard.addEntry(name, modeLabel, score, tile);
+      this._renderLeaderboardPage();
+      overlay.classList.remove('active');
+      mBtn.textContent = 'Continue';
+    };
+  }
+
+  _promptLeaderboard(score, mode) {
+    const modeLabel = mode || { single: 'Single Player', two: 'Two Player', ai: 'vs AI' }[this.currentMode] || this.currentMode;
+    const tile = this.game1?.getMaxTile() || 0;
+    // Use a styled in-page input instead of browser prompt
+    this._showLeaderboardPrompt(score, modeLabel, tile);
+  }
+
+  _showLeaderboardPrompt(score, mode, tile) {
+    const overlay = document.getElementById('modal-overlay');
+    const mTitle = document.getElementById('modal-title');
+    const mMsg = document.getElementById('modal-message');
+    const mBtn = document.getElementById('modal-btn');
+    if (!overlay) return;
+    mTitle.textContent = '🏆 Save Your Score';
+    mMsg.innerHTML = `<div style="margin-bottom:1rem;color:var(--blue-neon);font-size:1.1rem">Score: <strong>${score.toLocaleString()}</strong> &nbsp;|&nbsp; Tile: <strong>${tile}</strong></div>
+      <input id="lb-name-input" type="text" placeholder="Enter your name" maxlength="20"
+        style="width:100%;padding:0.6rem 1rem;background:rgba(255,255,255,0.06);border:1px solid rgba(124,58,237,0.5);
+               border-radius:8px;color:#f1f0ff;font-size:1rem;outline:none;font-family:inherit;" />`;
+    mBtn.textContent = 'Save to Leaderboard';
+    overlay.classList.add('active');
+    setTimeout(() => document.getElementById('lb-name-input')?.focus(), 100);
+    mBtn.onclick = () => {
+      const name = document.getElementById('lb-name-input')?.value?.trim() || 'Anonymous';
+      this.leaderboard.addEntry(name, mode, score, tile);
+      this._renderLeaderboardPage();
+      overlay.classList.remove('active');
+      mBtn.textContent = 'Continue';
+    };
+  }
+
+  _showAchievement(ach) {
+    const container = document.getElementById('achievement-toast');
+    if (!container) return;
+    container.innerHTML = `<div class="ach-toast">
+      <span class="ach-t-icon">${ach.icon}</span>
+      <div>
+        <div class="ach-t-title">Achievement Unlocked!</div>
+        <div class="ach-t-name">${ach.title}</div>
+      </div>
+    </div>`;
+    container.classList.add('active');
+    setTimeout(() => { container.classList.remove('active'); }, 3500);
+    this._renderAchievementsSection();
+  }
+
+  _showMergeEffect(boardId, gained) {
+    const el = document.getElementById(`${boardId}-score-flash`);
+    if (!el) return;
+    el.textContent = `+${gained}`;
+    el.classList.add('flash');
+    setTimeout(() => el.classList.remove('flash'), 600);
+  }
+
+  _launchConfetti() {
+    const canvas = document.getElementById('confetti-canvas');
+    if (!canvas) return;
+    canvas.style.display = 'block';
+    const ctx = canvas.getContext('2d');
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    const particles = Array.from({ length: 120 }, () => ({
+      x: Math.random() * canvas.width,
+      y: -10,
+      vx: (Math.random() - 0.5) * 4,
+      vy: Math.random() * 4 + 2,
+      color: `hsl(${Math.random()*360},80%,60%)`,
+      size: Math.random() * 8 + 4
+    }));
+
+    let frames = 0;
+    const animate = () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      particles.forEach(p => {
+        p.x += p.vx; p.y += p.vy;
+        ctx.fillStyle = p.color;
+        ctx.fillRect(p.x, p.y, p.size, p.size);
+      });
+      frames++;
+      if (frames < 150) requestAnimationFrame(animate);
+      else canvas.style.display = 'none';
+    };
+    animate();
+  }
+
+  // ─── TIMER ──────────────────────────────────────────────────────────────
+  _startTimer() {
+    this.timerInterval = setInterval(() => {
+      const el = document.getElementById('game-timer');
+      if (el && this.game1) {
+        el.textContent = this._formatTime(this.game1.getElapsedTime());
+      }
+    }, 1000);
+  }
+
+  _clearTimer() {
+    if (this.timerInterval) { clearInterval(this.timerInterval); this.timerInterval = null; }
+  }
+
+  _formatTime(secs) {
+    const m = Math.floor(secs / 60).toString().padStart(2, '0');
+    const s = (secs % 60).toString().padStart(2, '0');
+    return `${m}:${s}`;
+  }
+
+  // ─── PARTICLES (BACKGROUND) ─────────────────────────────────────────────
+  _initParticles() {
+    const canvas = document.getElementById('particle-canvas');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    const particles = Array.from({ length: 60 }, () => ({
+      x: Math.random() * canvas.width,
+      y: Math.random() * canvas.height,
+      vx: (Math.random() - 0.5) * 0.4,
+      vy: (Math.random() - 0.5) * 0.4,
+      size: Math.random() * 2 + 1,
+      alpha: Math.random() * 0.4 + 0.1
+    }));
+
+    window.addEventListener('resize', () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    });
+
+    const draw = () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      particles.forEach(p => {
+        p.x += p.vx; p.y += p.vy;
+        if (p.x < 0 || p.x > canvas.width) p.vx *= -1;
+        if (p.y < 0 || p.y > canvas.height) p.vy *= -1;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(147, 51, 234, ${p.alpha})`;
+        ctx.fill();
+      });
+      requestAnimationFrame(draw);
+    };
+    draw();
+  }
+}
+
+// ─── BOOTSTRAP ───────────────────────────────────────────────────────────────
+let appInstance;
+document.addEventListener('DOMContentLoaded', () => {
+  appInstance = new App();
+  window.app = appInstance;
+
+  // Touch support
+  let touchStartX, touchStartY;
+  document.addEventListener('touchstart', e => {
+    touchStartX = e.touches[0].clientX;
+    touchStartY = e.touches[0].clientY;
+  }, { passive: true });
+
+  document.addEventListener('touchend', e => {
+    if (!appInstance.game1 || appInstance.currentPage !== 'game') return;
+    const dx = e.changedTouches[0].clientX - touchStartX;
+    const dy = e.changedTouches[0].clientY - touchStartY;
+    if (Math.abs(dx) < 30 && Math.abs(dy) < 30) return;
+    let dir;
+    if (Math.abs(dx) > Math.abs(dy)) dir = dx > 0 ? 'right' : 'left';
+    else dir = dy > 0 ? 'down' : 'up';
+    appInstance.game1.move(dir);
+  }, { passive: true });
+});
+
+</script>
+</body>
+</html>
